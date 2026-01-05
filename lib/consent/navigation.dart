@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/category.dart';
 import 'package:group_project/consent/colors.dart';
+import 'package:group_project/screen/cart_screen.dart';
+import 'package:group_project/providers/cart_provider.dart';
 
-class Navigation extends StatefulWidget {
+class Navigation extends ConsumerStatefulWidget {
   const Navigation({super.key});
 
   @override
-  State<Navigation> createState() => _NavigationState();
+  ConsumerState<Navigation> createState() => _NavigationState();
 }
 
-class _NavigationState extends State<Navigation> {
+class _NavigationState extends ConsumerState<Navigation> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
     const Category(), // Main menu/category screen
-    const Center(
-      child: Text('Cart Screen\n(Coming Soon)', textAlign: TextAlign.center),
-    ),
+    const CartScreen(), // Shopping cart
     const Center(
       child: Text(
         'Favorites Screen\n(Coming Soon)',
@@ -42,22 +43,53 @@ class _NavigationState extends State<Navigation> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: maincolor,
         unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.restaurant_menu),
             label: 'Menu',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Cart',
-          ),
-          BottomNavigationBarItem(
+          BottomNavigationBarItem(icon: _buildCartIcon(), label: 'Cart'),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: 'Favorites',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCartIcon() {
+    final itemCount = ref.watch(cartItemCountProvider);
+    return Stack(
+      children: [
+        const Icon(Icons.shopping_cart),
+        if (itemCount > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                '$itemCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

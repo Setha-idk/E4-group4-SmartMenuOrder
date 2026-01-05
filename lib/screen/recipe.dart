@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/appbar.dart';
 import 'package:group_project/consent/colors.dart';
+import 'package:group_project/providers/cart_provider.dart';
 
-class Recipe extends StatelessWidget {
+class Recipe extends ConsumerWidget {
   final Map<String, dynamic> meal;
 
   const Recipe({super.key, required this.meal});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final String mealName = meal['meal'] ?? 'Unknown Meal';
     final String category = meal['category'] ?? 'General';
     final String imageUrl = meal['mealThumb'] ?? '';
@@ -105,8 +107,18 @@ class Recipe extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
+                            ref.read(cartProvider.notifier).addItem(meal);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Added to cart!')),
+                              SnackBar(
+                                content: Text('${meal['meal']} added to cart!'),
+                                duration: const Duration(seconds: 2),
+                                action: SnackBarAction(
+                                  label: 'View Cart',
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ),
                             );
                           },
                           icon: const Icon(Icons.add_shopping_cart),

@@ -3,8 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 // Configure your Laravel backend URL here
-const String apiBaseUrl =
-    'http://localhost:8000/api'; // Change this to your backend URL
+// For localhost: http://localhost:8000/api
+// For Android Emulator: http://10.0.2.2:8000/api
+// For Physical Device: http://YOUR_PC_IP:8000/api
+const String apiBaseUrl = 'http://10.0.2.2:8000/api'; // Android Emulator
 
 // Provider for fetching meals data
 final mealsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
