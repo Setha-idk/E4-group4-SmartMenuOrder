@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:group_project/category.dart';
+import 'package:group_project/home.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/screen/cart_screen.dart';
 import 'package:group_project/providers/cart_provider.dart';
+import 'package:group_project/screen/favorites_screen.dart';
 
 class Navigation extends ConsumerStatefulWidget {
   const Navigation({super.key});
@@ -18,12 +19,7 @@ class _NavigationState extends ConsumerState<Navigation> {
   final List<Widget> _screens = [
     const Category(), // Main menu/category screen
     const CartScreen(), // Shopping cart
-    const Center(
-      child: Text(
-        'Favorites Screen\n(Coming Soon)',
-        textAlign: TextAlign.center,
-      ),
-    ),
+    const FavoritesScreen(), // Favorites Screen
     const Center(
       child: Text('Profile Screen\n(Coming Soon)', textAlign: TextAlign.center),
     ),

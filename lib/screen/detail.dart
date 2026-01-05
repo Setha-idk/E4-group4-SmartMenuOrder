@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/appbar.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/cart_provider.dart';
+import 'package:group_project/providers/favorite_provider.dart';
 
 class Recipe extends ConsumerWidget {
   final Map<String, dynamic> meal;
@@ -17,6 +18,11 @@ class Recipe extends ConsumerWidget {
     final String instructions =
         meal['instructions'] ?? 'No instructions available.';
     final String tags = meal['tags'] ?? '';
+    final String mealId = meal['id'].toString();
+
+    // Watch the favorite provider to get the current state
+    final favoriteIds = ref.watch(favoriteProvider);
+    final isFavorite = favoriteIds.contains(mealId);
 
     return Scaffold(
       backgroundColor: background,
@@ -133,15 +139,14 @@ class Recipe extends ConsumerWidget {
                       const SizedBox(width: 12),
                       IconButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Added to favorites!'),
-                            ),
-                          );
+                          // Call the provider to toggle the favorite state
+                          ref.read(favoriteProvider.notifier).toggleFavorite(mealId);
                         },
-                        icon: const Icon(Icons.favorite_border),
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                        ),
                         iconSize: 28,
-                        color: maincolor,
+                        color: isFavorite ? Colors.red : maincolor,
                       ),
                     ],
                   ),
