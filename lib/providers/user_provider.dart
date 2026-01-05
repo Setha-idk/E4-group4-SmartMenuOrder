@@ -4,16 +4,18 @@ import 'package:dio/dio.dart';
 enum UserRole { admin, user, guest }
 
 class User {
+  final int id;
   final String username;
   final String phoneNumber;
   final UserRole role;
-  final bool isAdmin; // Added explicit boolean
+  final String? token;
 
   User({
+    required this.id,
     required this.username,
     required this.phoneNumber,
     required this.role,
-    required this.isAdmin,
+    this.token,
   });
 }
 
@@ -22,7 +24,6 @@ class UserNotifier extends StateNotifier<User?> {
 
   String? errorMessage;
 
-  // Aligning with the API URL used in your get_provider.dart
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: 'http://127.0.0.1:8000/api',
@@ -36,28 +37,27 @@ class UserNotifier extends StateNotifier<User?> {
   Future<bool> login(String phoneNumber, String password) async {
     try {
       errorMessage = null;
-      final response = await _dio.post(
-        '/login',
-        data: {'phone_number': phoneNumber, 'password': password},
-      );
+      final response = await _dio.post('/login', data: {
+        'phone_number': phoneNumber,
+        'password': password,
+      });
 
-      // Inside login method in user_provider.dart
       if (response.statusCode == 200) {
         final data = response.data;
-        final String token = data['access_token'];
+        final String token = data['token'] ?? data['access_token'];
         final userData = data['user'];
 
-        // Add the token to Dio headers for future requests
+        // Add the token to Dio headers for future requests within this notifier
         _dio.options.headers['Authorization'] = 'Bearer $token';
 
-        final bool adminStatus =
-            userData['is_admin'] == 1 || userData['is_admin'] == true;
+        final bool isAdmin = userData['is_admin'] == 1 || userData['is_admin'] == true;
 
         state = User(
+          id: userData['id'],
           username: userData['name'],
-          phoneNumber: userData['phone_number'],
-          role: adminStatus ? UserRole.admin : UserRole.user,
-          isAdmin: adminStatus,
+          phoneNumber: userData['phone_number'] ?? userData['phone'] ?? 'N/A',
+          role: isAdmin ? UserRole.admin : UserRole.user,
+          token: token,
         );
         return true;
       }
@@ -87,14 +87,20 @@ class UserNotifier extends StateNotifier<User?> {
         },
       );
 
-      if (response.statusCode == 204 || response.statusCode == 201) {
-        // Registered users are non-admins by default
-        state = User(
-          username: name,
-          phoneNumber: phoneNumber,
-          role: UserRole.user,
-          isAdmin: false,
-        );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        // Handle registration response to auto-login if token is provided
+        if (response.data['token'] != null) {
+          final data = response.data;
+          state = User(
+            id: data['user']['id'],
+            username: name,
+            phoneNumber: phoneNumber,
+            role: UserRole.user,
+            token: data['token'],
+          );
+        } else {
+          loginAsGuest(); // Or leave as null
+        }
         return true;
       }
       return false;
@@ -106,14 +112,16 @@ class UserNotifier extends StateNotifier<User?> {
 
   void loginAsGuest() {
     state = User(
+      id: 0,
       username: 'Guest',
       phoneNumber: 'N/A',
       role: UserRole.guest,
-      isAdmin: false,
+      token: null,
     );
   }
 
   void logout() {
+    _dio.options.headers.remove('Authorization');
     state = null;
   }
 }

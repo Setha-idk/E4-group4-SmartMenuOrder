@@ -58,6 +58,7 @@ class _NavigationState extends ConsumerState<Navigation> {
   }
 
   Widget _buildCartIcon() {
+    // Now this will work correctly
     final itemCount = ref.watch(cartItemCountProvider);
     return Stack(
       children: [

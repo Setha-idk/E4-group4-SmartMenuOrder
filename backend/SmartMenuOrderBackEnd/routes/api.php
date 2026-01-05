@@ -6,6 +6,7 @@ use App\Http\Controllers\MealController;
 use App\Http\Controllers\TagController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,13 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/admin/orders', [OrderController::class, 'index']); // For Admin
+    // Status update route
+    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+    Route::post('/orders/batch', [OrderController::class, 'batchStore']);
+});
 // Public Routes
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
@@ -28,9 +36,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
-
-    // Admin Specific Routes
-    Route::middleware(['can:admin-access'])->group(function () {
-        // Add your Admin CRUD routes here
-    });
 });

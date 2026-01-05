@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens; // 1. Import the trait
-
+use App\Models\Order;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -34,6 +34,10 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 
     /**
      * Get the attributes that should be cast.

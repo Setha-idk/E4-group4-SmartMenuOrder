@@ -1,6 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:group_project/providers/user_provider.dart';
 
-// Cart item model
 class CartItem {
   final int id;
   final String name;
@@ -19,21 +20,87 @@ class CartItem {
   });
 }
 
-// Cart state notifier
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]);
 
-  // Add item to cart
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: 'http://localhost:8000/api',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    followRedirects: false,
+    validateStatus: (status) => status! < 500,
+  ));
+
+  Future<bool> placeOrder(WidgetRef ref) async {
+    final user = ref.read(userProvider);
+    
+    // 1. Debug: Check if user and token exist in state
+    if (user == null) {
+      print("DEBUG: Order failed - User state is null");
+      return false;
+    }
+    if (user.token == null || user.token!.isEmpty) {
+      print("DEBUG: Order failed - Token is null or empty for user: ${user.username}");
+      return false;
+    }
+
+    final orderData = {
+      'user_name': user.username,
+      'phone_number': user.phoneNumber,
+      'items': state.map((item) => {
+        'meal_id': item.id,
+        'meal_name': item.name,
+        'quantity': item.quantity,
+        'price': item.price,
+      }).toList(),
+    };
+
+    // 2. Debug: Print the full request details
+    print("--- API REQUEST START ---");
+    print("URL: ${ _dio.options.baseUrl}/orders/batch");
+    print("Token: Bearer ${user.token}");
+    print("Body: $orderData");
+    print("-------------------------");
+
+    try {
+      final response = await _dio.post(
+        '/orders/batch',
+        data: orderData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer ${user.token}',
+          },
+        ),
+      );
+
+      print("DEBUG: Response Status: ${response.statusCode}");
+      print("DEBUG: Response Body: ${response.data}");
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        clearCart();
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      print("--- API ERROR ---");
+      print("Status Code: ${e.response?.statusCode}");
+      print("Error Data: ${e.response?.data}");
+      print("Message: ${e.message}");
+      return false;
+    } catch (e) {
+      print("DEBUG: General Error: $e");
+      return false;
+    }
+  }
+
   void addItem(Map<String, dynamic> meal) {
     final existingIndex = state.indexWhere((item) => item.id == meal['id']);
-
     if (existingIndex >= 0) {
-      // Item exists, increase quantity
-      final updatedCart = [...state];
-      updatedCart[existingIndex].quantity++;
-      state = updatedCart;
+      state[existingIndex].quantity++;
+      state = [...state];
     } else {
-      // New item, add to cart
       state = [
         ...state,
         CartItem(
@@ -47,62 +114,18 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     }
   }
 
-  // Remove item from cart
-  void removeItem(int id) {
-    state = state.where((item) => item.id != id).toList();
-  }
-
-  // Increase quantity
-  void increaseQuantity(int id) {
-    final updatedCart = state.map((item) {
-      if (item.id == id) {
-        item.quantity++;
-      }
-      return item;
-    }).toList();
-    state = updatedCart;
-  }
-
-  // Decrease quantity
-  void decreaseQuantity(int id) {
-    final updatedCart = state.map((item) {
-      if (item.id == id && item.quantity > 1) {
-        item.quantity--;
-      }
-      return item;
-    }).toList();
-    state = updatedCart;
-  }
-
-  // Clear cart
-  void clearCart() {
-    state = [];
-  }
-
-  // Get total price
-  double getTotal() {
-    return state.fold(0, (total, item) => total + (item.price * item.quantity));
-  }
-
-  // Get total items count
-  int getItemCount() {
-    return state.fold(0, (total, item) => total + item.quantity);
-  }
+  void removeItem(int id) => state = state.where((item) => item.id != id).toList();
+  void clearCart() => state = [];
 }
 
-// Cart provider
-final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
-  return CartNotifier();
-});
+final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) => CartNotifier());
 
-// Total price provider
 final cartTotalProvider = Provider<double>((ref) {
   final cart = ref.watch(cartProvider);
-  return cart.fold(0, (total, item) => total + (item.price * item.quantity));
+  return cart.fold(0, (sum, item) => sum + (item.price * item.quantity));
 });
 
-// Total items count provider
 final cartItemCountProvider = Provider<int>((ref) {
   final cart = ref.watch(cartProvider);
-  return cart.fold(0, (total, item) => total + item.quantity);
+  return cart.fold(0, (sum, item) => sum + item.quantity);
 });

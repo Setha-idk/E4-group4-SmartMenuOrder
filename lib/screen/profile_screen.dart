@@ -73,7 +73,7 @@ class ProfileScreen extends ConsumerWidget {
           style: TextStyle(fontSize: 18, color: font.withOpacity(0.7)),
         ),
         const SizedBox(height: 20),
-        if (user.isAdmin)
+        if (user.role == UserRole.admin)
           ElevatedButton(
             onPressed: () {
               //Navigate to admin dashboard
