@@ -4,7 +4,7 @@ import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/user_provider.dart';
 import 'package:group_project/screen/login_screen.dart';
 // Assuming there will be an admin dashboard screen
-// import 'package:group_project/screen/admin_dashboard_screen.dart';
+import 'package:group_project/screen/admin/admin_dashboard_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -76,14 +76,14 @@ class ProfileScreen extends ConsumerWidget {
         if (user.isAdmin)
           ElevatedButton(
             onPressed: () {
-              // Navigate to admin dashboard
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-              // );
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Admin Dashboard functionality coming soon!')),
+              //Navigate to admin dashboard
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminDashboard()),
               );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   const SnackBar(content: Text('Admin Dashboard functionality coming soon!')),
+              // );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,

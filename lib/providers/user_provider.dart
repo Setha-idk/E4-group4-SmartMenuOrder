@@ -1,34 +1,74 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
-// Enum for user roles, as expected by login_screen.dart
 enum UserRole { admin, user, guest }
 
-// A placeholder User model
 class User {
   final String username;
   final String phoneNumber;
   final UserRole role;
+  final bool isAdmin; // Added explicit boolean
 
-  User({required this.username, required this.phoneNumber, required this.role});
-
-  bool get isAdmin => role == UserRole.admin;
+  User({
+    required this.username,
+    required this.phoneNumber,
+    required this.role,
+    required this.isAdmin,
+  });
 }
 
-// The StateNotifier for managing the user state
 class UserNotifier extends StateNotifier<User?> {
   UserNotifier() : super(null);
 
   String? errorMessage;
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://your-api-url.com/api', // Replace with your backend URL
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
-  ));
 
-  // Handle registration logic matching RegisteredUserController.php
+  // Aligning with the API URL used in your get_provider.dart
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: 'http://127.0.0.1:8000/api',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    ),
+  );
+
+  Future<bool> login(String phoneNumber, String password) async {
+    try {
+      errorMessage = null;
+      final response = await _dio.post(
+        '/login',
+        data: {'phone_number': phoneNumber, 'password': password},
+      );
+
+      // Inside login method in user_provider.dart
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final String token = data['access_token'];
+        final userData = data['user'];
+
+        // Add the token to Dio headers for future requests
+        _dio.options.headers['Authorization'] = 'Bearer $token';
+
+        final bool adminStatus =
+            userData['is_admin'] == 1 || userData['is_admin'] == true;
+
+        state = User(
+          username: userData['name'],
+          phoneNumber: userData['phone_number'],
+          role: adminStatus ? UserRole.admin : UserRole.user,
+          isAdmin: adminStatus,
+        );
+        return true;
+      }
+      errorMessage = response.data['message'] ?? 'Login failed';
+      return false;
+    } on DioException catch (e) {
+      errorMessage = e.response?.data['message'] ?? 'Connection error';
+      return false;
+    }
+  }
+
   Future<bool> register({
     required String name,
     required String phoneNumber,
@@ -37,19 +77,23 @@ class UserNotifier extends StateNotifier<User?> {
   }) async {
     try {
       errorMessage = null;
-      final response = await _dio.post('/register', data: {
-        'name': name,
-        'phone_number': phoneNumber,
-        'password': password,
-        'password_confirmation': passwordConfirmation,
-      });
+      final response = await _dio.post(
+        '/register',
+        data: {
+          'name': name,
+          'phone_number': phoneNumber,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
 
       if (response.statusCode == 204 || response.statusCode == 201) {
-        // Automatically log in the user locally after successful registration
+        // Registered users are non-admins by default
         state = User(
           username: name,
           phoneNumber: phoneNumber,
           role: UserRole.user,
+          isAdmin: false,
         );
         return true;
       }
@@ -57,38 +101,23 @@ class UserNotifier extends StateNotifier<User?> {
     } on DioException catch (e) {
       errorMessage = e.response?.data['message'] ?? 'Registration failed';
       return false;
-    } catch (e) {
-      errorMessage = 'An unexpected error occurred';
-      return false;
     }
   }
 
-  // Placeholder login method with Phone
-  Future<bool> loginWithPhone(String phoneNumber, UserRole role) async {
-    print('Attempting to log in with phone: $phoneNumber');
-    if (phoneNumber.isNotEmpty) {
-      state = User(username: 'Test User', phoneNumber: phoneNumber, role: role);
-      errorMessage = null;
-      return true;
-    } else {
-      errorMessage = 'Invalid phone number (placeholder message)';
-      return false;
-    }
-  }
-
-  // Login as a guest
   void loginAsGuest() {
-    state = User(username: 'Guest', phoneNumber: 'N/A', role: UserRole.guest);
-    errorMessage = null;
+    state = User(
+      username: 'Guest',
+      phoneNumber: 'N/A',
+      role: UserRole.guest,
+      isAdmin: false,
+    );
   }
 
-  // Logout the user
   void logout() {
     state = null;
   }
 }
 
-// The StateNotifierProvider for the UI to use
 final userProvider = StateNotifierProvider<UserNotifier, User?>((ref) {
   return UserNotifier();
 });

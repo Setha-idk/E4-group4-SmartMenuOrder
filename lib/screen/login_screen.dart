@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/consent/navigation.dart';
 import 'package:group_project/providers/user_provider.dart';
-import 'package:group_project/providers/favorite_provider.dart';
 import 'package:group_project/screen/signup_screen.dart';
 import 'package:group_project/screen/admin/admin_dashboard_screen.dart';
 
@@ -17,56 +16,47 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController(); // Added controller
   bool _isLoading = false;
 
   @override
   void dispose() {
     _phoneController.dispose();
+    _passwordController.dispose(); // Added dispose
     super.dispose();
-  }
-
-  // TODO: Implement a real role detection if needed
-  UserRole _getRoleFromPhone(String phone) {
-    // Placeholder logic: if phone number contains 'admin', treat as admin.
-    if (phone.contains('admin')) {
-      return UserRole.admin;
-    }
-    return UserRole.user;
   }
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      final role = _getRoleFromPhone(_phoneController.text);
-
-      final success = await ref.read(userProvider.notifier).loginWithPhone(
+      // Call the API login method from your UserNotifier
+      final success = await ref.read(userProvider.notifier).login(
             _phoneController.text,
-            role,
+            _passwordController.text,
           );
 
       setState(() => _isLoading = false);
 
       if (success && mounted) {
-        await ref.read(favoriteProvider.notifier).syncFavoritesOnLogin();
-        
         final user = ref.read(userProvider);
+        
+        // Route based on role returned by API
         if (user?.role == UserRole.admin) {
-           Navigator.pushReplacement(
-             context,
-             MaterialPageRoute(builder: (context) => const AdminDashboard()),
-           );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminDashboard()),
+          );
         } else {
-           Navigator.pushReplacement(
-             context,
-             MaterialPageRoute(builder: (context) => const Navigation()),
-           );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Navigation()),
+          );
         }
       } else if (mounted) {
-        final error = ref.read(userProvider.notifier).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error ?? 'Login failed'),
+            content: Text(ref.read(userProvider.notifier).errorMessage ?? 'Login Failed'),
             backgroundColor: Colors.red,
           ),
         );
@@ -96,24 +86,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App Logo/Icon
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: maincolor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.restaurant_menu,
-                      size: 80,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // App Title
                   Text(
-                    'Smart Menu Order',
+                    'Welcome Back',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 32,
@@ -121,42 +95,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: maincolor,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Please login to continue',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: font.withOpacity(0.6),
-                    ),
-                  ),
                   const SizedBox(height: 40),
-
+                  
                   // Phone Number Field
                   TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
                       labelText: 'Phone Number',
-                      prefixIcon: Icon(Icons.phone, color: maincolor),
+                      prefixIcon: const Icon(Icons.phone, color: maincolor),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      focusedBorder: OutlineInputBorder(
+                    ),
+                    validator: (value) =>
+                        (value == null || value.isEmpty) ? 'Enter phone number' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Password Field (Newly Added)
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: const Icon(Icons.lock, color: maincolor),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: maincolor, width: 2),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your phone number';
-                      }
-                      // Basic validation for phone number length
-                      if (value.length < 10) {
-                        return 'Please enter a valid phone number';
-                      }
-                      return null;
-                    },
+                    validator: (value) =>
+                        (value == null || value.isEmpty) ? 'Enter password' : null,
                   ),
                   const SizedBox(height: 24),
 
@@ -170,35 +139,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 2,
                     ),
                     child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Login',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Login', style: TextStyle(fontSize: 18)),
                   ),
+
                   const SizedBox(height: 16),
 
                   // Sign Up Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: TextStyle(color: font.withOpacity(0.6)),
-                      ),
+                      const Text("Don't have an account? "),
                       TextButton(
                         onPressed: () {
                           Navigator.pushReplacement(
@@ -208,15 +161,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                         child: const Text(
                           'Sign Up',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: maincolor,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: maincolor),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  
+                  const Divider(height: 40),
 
                   // Guest Login Button
                   OutlinedButton.icon(
@@ -225,15 +176,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: const Text('Continue as Guest'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: maincolor,
-                      side: BorderSide(color: maincolor),
+                      side: const BorderSide(color: maincolor),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
-
-
                 ],
               ),
             ),

@@ -18,9 +18,9 @@ class DatabaseSeeder extends Seeder
         // Seed categories and meals for Smart Menu Order
         $this->call([
             CategorySeeder::class,
-            MealSeeder::class,
             TagSeeder::class,
             UserSeeder::class,
+            MealSeeder::class,
         ]);
     }
 }
