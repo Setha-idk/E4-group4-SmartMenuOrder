@@ -1,9 +1,9 @@
 import 'package:easy_splash_screen/easy_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lab3/consent/colors.dart';
-import 'package:lab3/consent/navigation.dart';
-import 'package:lab3/providers/get_provider.dart';
+import 'package:group_project/consent/colors.dart';
+import 'package:group_project/consent/navigation.dart';
+import 'package:group_project/providers/get_provider.dart';
 
 class Splash extends ConsumerStatefulWidget {
   const Splash({super.key});
@@ -13,20 +13,19 @@ class Splash extends ConsumerStatefulWidget {
 }
 
 class _SplashState extends ConsumerState<Splash> {
-  
   Future<Widget> fetchInitialData() async {
     try {
       await Future.wait([
-        ref.read(mealsProvider.future),      
-        ref.read(categoriesProvider.future), 
-        Future.delayed(const Duration(seconds: 4)), 
+        ref.read(mealsProvider.future),
+        ref.read(categoriesProvider.future),
+        Future.delayed(const Duration(seconds: 4)),
       ]);
 
-      return Navigation(); 
+      return const Navigation();
     } catch (e) {
       debugPrint("Error fetching data: $e");
       await Future.delayed(const Duration(seconds: 2));
-      return Navigation(); 
+      return Navigation();
     }
   }
 
@@ -46,7 +45,7 @@ class _SplashState extends ConsumerState<Splash> {
       backgroundColor: background,
       showLoader: true,
       loaderColor: Colors.pink,
-      futureNavigator: fetchInitialData(), 
+      futureNavigator: fetchInitialData(),
     );
   }
 }
