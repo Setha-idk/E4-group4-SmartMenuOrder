@@ -54,7 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (user?.role == UserRole.admin) {
            Navigator.pushReplacement(
              context,
-             MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+             MaterialPageRoute(builder: (context) => const AdminDashboard()),
            );
         } else {
            Navigator.pushReplacement(

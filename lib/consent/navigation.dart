@@ -5,6 +5,7 @@ import 'package:group_project/consent/colors.dart';
 import 'package:group_project/screen/cart_screen.dart';
 import 'package:group_project/providers/cart_provider.dart';
 import 'package:group_project/screen/favorites_screen.dart';
+import 'package:group_project/screen/profile_screen.dart'; // Import the new profile screen
 
 class Navigation extends ConsumerStatefulWidget {
   const Navigation({super.key});
@@ -20,9 +21,7 @@ class _NavigationState extends ConsumerState<Navigation> {
     const Category(), // Main menu/category screen
     const CartScreen(), // Shopping cart
     const FavoritesScreen(), // Favorites Screen
-    const Center(
-      child: Text('Profile Screen\n(Coming Soon)', textAlign: TextAlign.center),
-    ),
+    const ProfileScreen(), // Profile Screen
   ];
 
   @override
