@@ -15,11 +15,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Seed categories and meals for Smart Menu Order
+        $this->call([
+            CategorySeeder::class,
+            MealSeeder::class,
         ]);
     }
 }
