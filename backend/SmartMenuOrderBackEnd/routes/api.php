@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\MealController;
+use App\Http\Controllers\CategoryController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/orders/{order}/cancel', [OrderController::class, 'cancel']);
 
     Route::apiResource('meals', MealController::class)->except(['index']);
+    Route::apiResource('categories', CategoryController::class)->except(['index']);
 });
 // Public Routes
 Route::post('/register', [RegisteredUserController::class, 'store']);
@@ -31,6 +33,7 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
 // Data Routes
 Route::get('/meals', [MealController::class, 'index']);
+Route::get('/categories', [CategoryController::class, 'index']);
 
 
 // Protected Routes

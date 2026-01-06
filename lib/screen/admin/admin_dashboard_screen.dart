@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/admin_order_provider.dart';
-import 'package:group_project/screen/admin/meal_manage_screen.dart'; // Import the management screen
+import 'package:group_project/screen/admin/meal_manage_screen.dart';
+import 'package:group_project/screen/admin/category_manage_screen.dart';
 
 class AdminDashboard extends ConsumerStatefulWidget {
   const AdminDashboard({super.key});
@@ -86,6 +87,12 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                     'Categories',
                     Icons.category,
                     Colors.blue,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CategoryManageScreen(),
+                      ),
+                    ),
                   ),
 
                   _buildMenuCard(context, 'Users', Icons.people, Colors.purple),
