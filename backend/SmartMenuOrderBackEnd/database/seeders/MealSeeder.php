@@ -74,18 +74,6 @@ class MealSeeder extends Seeder
                 'updated_at' => now()
             ],
             [
-                'category_id' => 6, // Thai
-                'name' => 'Pad Thai',
-                'description' => 'Stir-fried rice noodles with shrimp, eggs, and peanuts',
-                'price' => 13.99,
-                'image_url' => 'https://www.themealdb.com/images/media/meals/wvtzq31574776223.jpg',
-                'tags' => 'Asian, Noodles',
-                
-                'is_available' => true,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-            [
                 'category_id' => 7, // Dessert
                 'name' => 'Chocolate Lava Cake',
                 'description' => 'Warm chocolate cake with a molten chocolate center',
