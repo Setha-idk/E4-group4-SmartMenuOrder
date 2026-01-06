@@ -15,7 +15,6 @@ class Meal extends Model
         'description',
         'price',
         'image_url',
-        'instructions',
         'is_available'
     ];
 

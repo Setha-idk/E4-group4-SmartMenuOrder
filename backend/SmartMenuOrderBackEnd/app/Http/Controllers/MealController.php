@@ -21,7 +21,6 @@ class MealController extends Controller
             'description' => 'required|string',
             'price' => 'required|numeric',
             'image_url' => 'required|string',
-            'instructions' => 'nullable|string',
             'is_available' => 'boolean'
         ]);
 

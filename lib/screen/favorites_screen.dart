@@ -55,12 +55,16 @@ class FavoritesScreen extends ConsumerWidget {
 
   // Replicated from category.dart for consistent UI
   Widget _buildMealCard(
-      BuildContext context, WidgetRef ref, Map<String, dynamic> meal) {
-    final String category = meal['category'] ?? 'General';
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> meal,
+  ) {
+    final String category = (meal['category'] is Map)
+        ? (meal['category']['name'] ?? 'General')
+        : (meal['category']?.toString() ?? 'General');
     final String tags = meal['tags'] ?? '';
     final String mealId = meal['id'].toString();
-    final bool isFavorite =
-        ref.watch(favoriteProvider).contains(mealId);
+    final bool isFavorite = ref.watch(favoriteProvider).contains(mealId);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -80,7 +84,7 @@ class FavoritesScreen extends ConsumerWidget {
           final titleSize = (cardHeight * 0.07).clamp(minTitleSize, 20.0);
           final categorySize = (cardHeight * 0.05).clamp(minCategorySize, 16.0);
           final tagSize = (cardHeight * 0.04).clamp(minTagSize, 14.0);
-          
+
           final imageHeight = cardHeight * 0.55;
 
           return Container(
@@ -107,16 +111,17 @@ class FavoritesScreen extends ConsumerWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
                           image: DecorationImage(
-                            image: NetworkImage(meal['mealThumb'] ?? ''),
+                            image: NetworkImage(meal['image_url'] ?? ''),
                             fit: BoxFit.cover,
                           ),
                         ),
+                        clipBehavior: Clip.hardEdge,
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
-                        meal['meal'] ?? '',
+                        meal['name'] ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -168,7 +173,9 @@ class FavoritesScreen extends ConsumerWidget {
                         size: cardHeight * 0.1, // Dynamic icon size
                       ),
                       onPressed: () {
-                        ref.read(favoriteProvider.notifier).toggleFavorite(mealId);
+                        ref
+                            .read(favoriteProvider.notifier)
+                            .toggleFavorite(mealId);
                       },
                       splashRadius: 20,
                     ),

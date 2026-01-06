@@ -20,7 +20,7 @@ class MealSeeder extends Seeder
                 'price' => 12.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/llcbn01574260722.jpg',
                 'tags' => 'Italian, Creamy',
-                'instructions' => 'Cook pasta according to package directions. In a bowl, whisk eggs, cheese, and pepper. Drain pasta and immediately mix with egg mixture. Add cooked bacon and serve.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -32,7 +32,7 @@ class MealSeeder extends Seeder
                 'price' => 14.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg',
                 'tags' => 'Italian, Vegetarian',
-                'instructions' => 'Prepare pizza dough. Spread tomato sauce, add mozzarella cheese and fresh basil. Bake at 450°F for 12-15 minutes.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -44,7 +44,7 @@ class MealSeeder extends Seeder
                 'price' => 9.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/n7qnkb1630444129.jpg',
                 'tags' => 'Healthy, Fresh',
-                'instructions' => 'Toss romaine lettuce with Caesar dressing. Add croutons and parmesan cheese. Top with grilled chicken if desired.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -56,7 +56,7 @@ class MealSeeder extends Seeder
                 'price' => 11.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/k420tj1585565244.jpg',
                 'tags' => 'American, Classic',
-                'instructions' => 'Grill beef patty. Toast buns. Add cheese, lettuce, tomato, and condiments. Serve with fries.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -68,7 +68,7 @@ class MealSeeder extends Seeder
                 'price' => 15.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg',
                 'tags' => 'Spicy, Grilled',
-                'instructions' => 'Marinate chicken in yogurt and spices. Grill until cooked through. Serve with naan bread and mint chutney.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -80,7 +80,7 @@ class MealSeeder extends Seeder
                 'price' => 13.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/wvtzq31574776223.jpg',
                 'tags' => 'Asian, Noodles',
-                'instructions' => 'Stir-fry rice noodles with eggs, vegetables, and shrimp. Add tamarind sauce and peanuts.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -92,7 +92,7 @@ class MealSeeder extends Seeder
                 'price' => 7.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/xqrwyr1511638750.jpg',
                 'tags' => 'Sweet, Chocolate',
-                'instructions' => 'Mix flour, sugar, cocoa, eggs, and butter. Bake at 350°F for 12 minutes. Serve warm with vanilla ice cream.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -104,7 +104,7 @@ class MealSeeder extends Seeder
                 'price' => 10.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg',
                 'tags' => 'Seafood, Fresh',
-                'instructions' => 'Prepare sushi rice. Roll with nori, cucumber, avocado, and imitation crab. Slice and serve with soy sauce.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -116,7 +116,7 @@ class MealSeeder extends Seeder
                 'price' => 13.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/uquqtu1511178042.jpg',
                 'tags' => 'Italian, Creamy, Vegetarian',
-                'instructions' => 'Cook fettuccine. Make Alfredo sauce with butter, cream, and parmesan. Toss pasta with sauce.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -152,7 +152,7 @@ class MealSeeder extends Seeder
                 'price' => 8.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/xqrwyr1511638750.jpg',
                 'tags' => 'Italian, Coffee, Sweet',
-                'instructions' => 'Layer coffee-soaked ladyfingers with mascarpone mixture. Dust with cocoa powder and refrigerate.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()

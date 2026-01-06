@@ -23,43 +23,51 @@ class CartItem {
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]);
 
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:8000/api',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
-    followRedirects: false,
-    validateStatus: (status) => status! < 500,
-  ));
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: 'http://localhost:8000/api',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      followRedirects: false,
+      validateStatus: (status) => status! < 500,
+    ),
+  );
 
   Future<bool> placeOrder(WidgetRef ref) async {
     final user = ref.read(userProvider);
-    
+
     // 1. Debug: Check if user and token exist in state
     if (user == null) {
       print("DEBUG: Order failed - User state is null");
       return false;
     }
     if (user.token == null || user.token!.isEmpty) {
-      print("DEBUG: Order failed - Token is null or empty for user: ${user.username}");
+      print(
+        "DEBUG: Order failed - Token is null or empty for user: ${user.username}",
+      );
       return false;
     }
 
     final orderData = {
       'user_name': user.username,
       'phone_number': user.phoneNumber,
-      'items': state.map((item) => {
-        'meal_id': item.id,
-        'meal_name': item.name,
-        'quantity': item.quantity,
-        'price': item.price,
-      }).toList(),
+      'items': state
+          .map(
+            (item) => {
+              'meal_id': item.id,
+              'meal_name': item.name,
+              'quantity': item.quantity,
+              'price': item.price,
+            },
+          )
+          .toList(),
     };
 
     // 2. Debug: Print the full request details
     print("--- API REQUEST START ---");
-    print("URL: ${ _dio.options.baseUrl}/orders/batch");
+    print("URL: ${_dio.options.baseUrl}/orders/batch");
     print("Token: Bearer ${user.token}");
     print("Body: $orderData");
     print("-------------------------");
@@ -68,11 +76,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
       final response = await _dio.post(
         '/orders/batch',
         data: orderData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer ${user.token}',
-          },
-        ),
+        options: Options(headers: {'Authorization': 'Bearer ${user.token}'}),
       );
 
       print("DEBUG: Response Status: ${response.statusCode}");
@@ -105,20 +109,25 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
         ...state,
         CartItem(
           id: meal['id'],
-          name: meal['meal'],
-          category: meal['category'],
+          name: meal['name'],
+          category: (meal['category'] is Map)
+              ? (meal['category']['name'] ?? 'General')
+              : (meal['category']?.toString() ?? 'General'),
           price: double.tryParse(meal['price']?.toString() ?? '0') ?? 0,
-          imageUrl: meal['mealThumb'] ?? '',
+          imageUrl: meal['image_url'] ?? '',
         ),
       ];
     }
   }
 
-  void removeItem(int id) => state = state.where((item) => item.id != id).toList();
+  void removeItem(int id) =>
+      state = state.where((item) => item.id != id).toList();
   void clearCart() => state = [];
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) => CartNotifier());
+final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>(
+  (ref) => CartNotifier(),
+);
 
 final cartTotalProvider = Provider<double>((ref) {
   final cart = ref.watch(cartProvider);

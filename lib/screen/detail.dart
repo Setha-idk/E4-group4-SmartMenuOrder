@@ -12,11 +12,13 @@ class Recipe extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final String mealName = meal['meal'] ?? 'Unknown Meal';
-    final String category = meal['category'] ?? 'General';
-    final String imageUrl = meal['mealThumb'] ?? '';
-    final String instructions =
-        meal['instructions'] ?? 'No instructions available.';
+    final String mealName = meal['name'] ?? 'Unknown Meal';
+    final String category = (meal['category'] is Map)
+        ? (meal['category']['name'] ?? 'General')
+        : (meal['category']?.toString() ?? 'General');
+    final String imageUrl = meal['image_url'] ?? '';
+    final String description =
+        meal['description'] ?? 'No description available.';
     final String tags = meal['tags'] ?? '';
     final String mealId = meal['id'].toString();
 
@@ -36,10 +38,15 @@ class Recipe extends ConsumerWidget {
               Container(
                 width: double.infinity,
                 height: 250,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 100,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
               ),
@@ -84,9 +91,9 @@ class Recipe extends ConsumerWidget {
 
                   const SizedBox(height: 24),
 
-                  // Instructions Header
+                  // Description Header
                   const Text(
-                    'Instructions',
+                    'Description',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -95,9 +102,9 @@ class Recipe extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Instructions Content
+                  // Description Content
                   Text(
-                    instructions,
+                    description,
                     style: const TextStyle(
                       fontSize: 16,
                       height: 1.6,
@@ -116,7 +123,7 @@ class Recipe extends ConsumerWidget {
                             ref.read(cartProvider.notifier).addItem(meal);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('${meal['meal']} added to cart!'),
+                                content: Text('${meal['name']} added to cart!'),
                                 duration: const Duration(seconds: 2),
                                 action: SnackBarAction(
                                   label: 'View Cart',
@@ -140,7 +147,9 @@ class Recipe extends ConsumerWidget {
                       IconButton(
                         onPressed: () {
                           // Call the provider to toggle the favorite state
-                          ref.read(favoriteProvider.notifier).toggleFavorite(mealId);
+                          ref
+                              .read(favoriteProvider.notifier)
+                              .toggleFavorite(mealId);
                         },
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,

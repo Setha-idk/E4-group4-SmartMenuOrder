@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/appbar.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/favorite_provider.dart';
-import 'package:group_project/screen/detail.dart'; // Updated import
+import 'package:group_project/screen/detail.dart';
 import 'package:group_project/providers/get_provider.dart';
 
 class Category extends ConsumerStatefulWidget {
@@ -46,12 +46,13 @@ class _CategoryState extends ConsumerState<Category> {
                     color: Colors.black12,
                     blurRadius: 10,
                     offset: Offset(0, 5),
-                  )
+                  ),
                 ],
               ),
               child: TextField(
                 controller: _searchController,
-                onChanged: (value) => setState(() => searchQuery = value.toLowerCase()),
+                onChanged: (value) =>
+                    setState(() => searchQuery = value.toLowerCase()),
                 decoration: InputDecoration(
                   hintText: "Search your favorite meal...",
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
@@ -71,12 +72,12 @@ class _CategoryState extends ConsumerState<Category> {
             ),
           ),
 
-          // Category Chips
+          // Category Selector
           categoriesAsync.when(
             data: (categories) {
               final allCategories = [
                 "All",
-                ...categories.map((c) => (c['name'] ?? 'Unknown').toString())
+                ...categories.map((c) => (c['name'] ?? 'Unknown').toString()),
               ];
               return SizedBox(
                 height: 60,
@@ -92,7 +93,8 @@ class _CategoryState extends ConsumerState<Category> {
                       child: ChoiceChip(
                         label: Text(category),
                         selected: isSelected,
-                        onSelected: (selected) => setState(() => selectedCategory = category),
+                        onSelected: (selected) =>
+                            setState(() => selectedCategory = category),
                         selectedColor: maincolor,
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : Colors.black,
@@ -113,17 +115,21 @@ class _CategoryState extends ConsumerState<Category> {
             child: mealsAsync.when(
               data: (meals) {
                 final filteredMeals = meals.where((meal) {
-                  // Safe category extraction for filtering
                   final mealCat = (meal['category'] is Map)
                       ? (meal['category']['name'] ?? '')
                       : (meal['category']?.toString() ?? '');
-                  
-                  final matchesCategory = selectedCategory == "All" || mealCat == selectedCategory;
-                  final matchesSearch = (meal['meal'] ?? '').toString().toLowerCase().contains(searchQuery);
+
+                  final matchesCategory =
+                      selectedCategory == "All" || mealCat == selectedCategory;
+                  final matchesSearch = (meal['meal'] ?? '')
+                      .toString()
+                      .toLowerCase()
+                      .contains(searchQuery);
                   return matchesCategory && matchesSearch;
                 }).toList();
 
-                if (filteredMeals.isEmpty) return const Center(child: Text("No meals found"));
+                if (filteredMeals.isEmpty)
+                  return const Center(child: Text("No meals found"));
                 return _buildMealGrid(filteredMeals);
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -151,20 +157,18 @@ class _CategoryState extends ConsumerState<Category> {
         itemCount: filteredMeals.length,
         itemBuilder: (context, index) {
           final meal = filteredMeals[index];
-          
-          // --- Defensive Data Extraction ---
-          final int mealId = meal['id'] ?? 0;
-          final String mealName = meal['meal'] ?? 'Unknown';
-          final String imageUrl = meal['mealThumb'] ?? '';
-          final String price = meal['price']?.toString() ?? '0.00';
-          
-          // Fix for the Map vs String Category error
+
+          // --- Data extraction mirrored from detail.dart (Recipe widget) ---
+          final String mealName = meal['name'] ?? 'Unknown Meal';
           final String category = (meal['category'] is Map)
               ? (meal['category']['name'] ?? 'General')
               : (meal['category']?.toString() ?? 'General');
-          
-          // Fix for favorite type error (int to String)
-          final bool isFavorite = favorites.contains(mealId.toString());
+          final String imageUrl = meal['image_url'] ?? '';
+          final String tags = meal['tags'] ?? '';
+          final String mealId = meal['id'].toString();
+          final String price = meal['price']?.toString() ?? '0.00';
+
+          final bool isFavorite = favorites.contains(mealId);
 
           return GestureDetector(
             onTap: () => Navigator.push(
@@ -180,7 +184,7 @@ class _CategoryState extends ConsumerState<Category> {
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
-                  )
+                  ),
                 ],
               ),
               child: Stack(
@@ -191,9 +195,14 @@ class _CategoryState extends ConsumerState<Category> {
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
                             image: DecorationImage(
-                              image: NetworkImage(imageUrl),
+                              image: imageUrl.isNotEmpty
+                                  ? NetworkImage(imageUrl)
+                                  : const AssetImage('assets/placeholder.png')
+                                        as ImageProvider,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -206,26 +215,54 @@ class _CategoryState extends ConsumerState<Category> {
                           children: [
                             Text(
                               mealName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
                               category,
-                              style: TextStyle(color: font.withOpacity(0.6), fontSize: 12),
+                              style: TextStyle(
+                                color: font.withOpacity(0.6),
+                                fontSize: 12,
+                              ),
                             ),
+                            if (tags.isNotEmpty)
+                              Text(
+                                tags,
+                                style: TextStyle(
+                                  color: font.withOpacity(0.4),
+                                  fontSize: 10,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   "\$$price",
-                                  style: TextStyle(color: maincolor, fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: TextStyle(
+                                    color: maincolor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(color: maincolor, shape: BoxShape.circle),
-                                  child: const Icon(Icons.add, color: Colors.white, size: 20),
+                                  decoration: BoxDecoration(
+                                    color: maincolor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
                               ],
                             ),
@@ -243,8 +280,9 @@ class _CategoryState extends ConsumerState<Category> {
                         color: isFavorite ? Colors.red : Colors.white,
                       ),
                       onPressed: () {
-                        // Ensure ID is passed as String
-                        ref.read(favoriteProvider.notifier).toggleFavorite(mealId.toString());
+                        ref
+                            .read(favoriteProvider.notifier)
+                            .toggleFavorite(mealId);
                       },
                     ),
                   ),

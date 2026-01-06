@@ -30,7 +30,7 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.read(mealManageProvider.notifier).fetchMeals(),
-          )
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -46,21 +46,22 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
               final meal = meals[index];
               return ListTile(
                 leading: Image.network(
-                  meal['mealThumb'] ?? '', 
-                  width: 50, 
-                  errorBuilder: (c, e, s) => const Icon(Icons.fastfood)
+                  meal['image_url'] ?? '',
+                  width: 50,
+                  errorBuilder: (c, e, s) => const Icon(Icons.fastfood),
                 ),
-                title: Text(meal['meal'] ?? 'Unknown'),
+                title: Text(meal['name'] ?? 'Unknown'),
                 subtitle: Text("\$${meal['price']}"),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit), 
-                      onPressed: () => _showMealForm(context, ref, user?.token, meal: meal)
+                      icon: const Icon(Icons.edit),
+                      onPressed: () =>
+                          _showMealForm(context, ref, user?.token, meal: meal),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red), 
+                      icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => _confirmDelete(meal['id'], user?.token),
                     ),
                   ],
@@ -82,7 +83,10 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
       builder: (context) => AlertDialog(
         title: const Text("Delete Meal?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("No")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("No"),
+          ),
           TextButton(
             onPressed: () {
               ref.read(mealManageProvider.notifier).deleteMeal(id, token);
@@ -95,9 +99,16 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
     );
   }
 
-  void _showMealForm(BuildContext context, WidgetRef ref, String? token, {Map<String, dynamic>? meal}) {
+  void _showMealForm(
+    BuildContext context,
+    WidgetRef ref,
+    String? token, {
+    Map<String, dynamic>? meal,
+  }) {
     final nameController = TextEditingController(text: meal?['name']);
-    final priceController = TextEditingController(text: meal?['price']?.toString());
+    final priceController = TextEditingController(
+      text: meal?['price']?.toString(),
+    );
     // ... Add other controllers for category_id, description, image_url
 
     showDialog(
@@ -107,14 +118,24 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
         content: SingleChildScrollView(
           child: Column(
             children: [
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Name")),
-              TextField(controller: priceController, decoration: const InputDecoration(labelText: "Price"), keyboardType: TextInputType.number),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: "Name"),
+              ),
+              TextField(
+                controller: priceController,
+                decoration: const InputDecoration(labelText: "Price"),
+                keyboardType: TextInputType.number,
+              ),
               // ... Add other fields
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () async {
               final data = {
@@ -124,7 +145,9 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
                 "description": "Description here",
                 "image_url": "https://example.com/image.jpg",
               };
-              final success = await ref.read(mealManageProvider.notifier).saveMeal(data, id: meal?['id'], token: token!);
+              final success = await ref
+                  .read(mealManageProvider.notifier)
+                  .saveMeal(data, id: meal?['id'], token: token!);
               if (success) Navigator.pop(context);
             },
             child: const Text("Save"),

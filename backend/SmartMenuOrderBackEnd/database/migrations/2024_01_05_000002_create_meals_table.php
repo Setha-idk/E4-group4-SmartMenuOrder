@@ -18,7 +18,6 @@ return new class extends Migration {
             $table->decimal('price', 8, 2);
             $table->string('image_url');
             $table->string('tags')->nullable();
-            $table->text('instructions')->nullable();
             $table->boolean('is_available')->default(true);
             $table->timestamps();
         });

@@ -51,83 +51,79 @@ List<Map<String, dynamic>> _getMockMeals() {
   return [
     {
       'id': 1,
-      'meal': 'Spaghetti Carbonara',
+      'name': 'Spaghetti Carbonara',
       'category': 'Pasta',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/llcbn01574260722.jpg',
       'tags': 'Italian, Creamy',
-      'instructions':
-          'Cook pasta according to package directions. In a bowl, whisk eggs, cheese, and pepper. Drain pasta and immediately mix with egg mixture. Add cooked bacon and serve.',
+      'description':
+          'Classic Italian pasta with eggs, cheese, bacon, and black pepper.',
     },
     {
       'id': 2,
-      'meal': 'Margherita Pizza',
+      'name': 'Margherita Pizza',
       'category': 'Pizza',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg',
       'tags': 'Italian, Vegetarian',
-      'instructions':
-          'Prepare pizza dough. Spread tomato sauce, add mozzarella cheese and fresh basil. Bake at 450°F for 12-15 minutes.',
+      'description':
+          'Traditional pizza with tomato sauce, mozzarella, and fresh basil.',
     },
     {
       'id': 3,
-      'meal': 'Caesar Salad',
+      'name': 'Caesar Salad',
       'category': 'Salad',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/n7qnkb1630444129.jpg',
       'tags': 'Healthy, Fresh',
-      'instructions':
-          'Toss romaine lettuce with Caesar dressing. Add croutons and parmesan cheese. Top with grilled chicken if desired.',
+      'description':
+          'Crisp romaine lettuce with Caesar dressing, croutons, and parmesan.',
     },
     {
       'id': 4,
-      'meal': 'Cheeseburger',
+      'name': 'Cheeseburger',
       'category': 'Burger',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/k420tj1585565244.jpg',
       'tags': 'American, Classic',
-      'instructions':
-          'Grill beef patty. Toast buns. Add cheese, lettuce, tomato, and condiments. Serve with fries.',
+      'description':
+          'Juicy beef patty with cheese, lettuce, tomato, and special sauce.',
     },
     {
       'id': 5,
-      'meal': 'Chicken Tikka',
+      'name': 'Chicken Tikka',
       'category': 'Indian',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg',
       'tags': 'Spicy, Grilled',
-      'instructions':
-          'Marinate chicken in yogurt and spices. Grill until cooked through. Serve with naan bread and mint chutney.',
+      'description': 'Tender chicken in a creamy tomato-based curry sauce.',
     },
     {
       'id': 6,
-      'meal': 'Pad Thai',
+      'name': 'Pad Thai',
       'category': 'Thai',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/wvtzq31574776223.jpg',
       'tags': 'Asian, Noodles',
-      'instructions':
-          'Stir-fry rice noodles with eggs, vegetables, and shrimp. Add tamarind sauce and peanuts.',
+      'description': 'Stir-fried rice noodles with shrimp, eggs, and peanuts.',
     },
     {
       'id': 7,
-      'meal': 'Chocolate Cake',
+      'name': 'Chocolate Cake',
       'category': 'Dessert',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/xqrwyr1511638750.jpg',
       'tags': 'Sweet, Chocolate',
-      'instructions':
-          'Mix flour, sugar, cocoa, eggs, and butter. Bake at 350°F for 30 minutes. Frost with chocolate ganache.',
+      'description': 'Warm chocolate cake with a molten chocolate center.',
     },
     {
       'id': 8,
-      'meal': 'Sushi Roll',
+      'name': 'Sushi Roll',
       'category': 'Japanese',
-      'mealThumb':
+      'image_url':
           'https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg',
       'tags': 'Seafood, Fresh',
-      'instructions':
-          'Prepare sushi rice. Roll with nori, cucumber, avocado, and salmon. Slice and serve with soy sauce.',
+      'description': 'Sushi roll with crab, avocado, and cucumber.',
     },
   ];
 }
