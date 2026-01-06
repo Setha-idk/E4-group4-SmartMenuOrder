@@ -1,69 +1,183 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:group_project/providers/user_provider.dart';
+import 'package:http/http.dart' as http;
+import 'user_provider.dart';
 
-class OrderModel {
+class Order {
   final int id;
-  final String mealName;
-  final int quantity;
+  final String orderNumber;
+  final double totalAmount;
   final String status;
+  final String createdAt;
+  final List<OrderItem> items;
 
-  OrderModel({
+  Order({
     required this.id,
-    required this.mealName,
-    required this.quantity,
+    required this.orderNumber,
+    required this.totalAmount,
     required this.status,
+    required this.createdAt,
+    required this.items,
   });
 
-  factory OrderModel.fromJson(Map<String, dynamic> json) {
-    return OrderModel(
-      id: json['id'] ?? 0,
-      mealName: json['meal_name'] ?? 'Unknown',
-      quantity: json['quantity'] ?? 1,
-      status: json['status'] ?? 'pending',
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      id: json['id'],
+      orderNumber: json['order_number'],
+      totalAmount: double.parse(json['total_amount'].toString()),
+      status: json['status'],
+      createdAt: json['created_at'],
+      items: (json['items'] as List?)
+              ?.map((item) => OrderItem.fromJson(item))
+              .toList() ??
+          [],
     );
   }
 }
 
-class OrderNotifier extends StateNotifier<List<OrderModel>> {
-  OrderNotifier() : super([]);
+class OrderItem {
+  final int id;
+  final String mealName;
+  final int quantity;
+  final double price;
+  final String mealImage;
 
-  final Dio _dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000/api/admin'));
+  OrderItem({
+    required this.id,
+    required this.mealName,
+    required this.quantity,
+    required this.price,
+    required this.mealImage,
+  });
 
-  Future<void> fetchMyOrders(String? token) async {
-    if (token == null) return;
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    return OrderItem(
+      id: json['id'],
+      mealName: json['meal'] != null ? json['meal']['name'] : 'Unknown Meal',
+      quantity: json['quantity'],
+      price: double.parse(json['price'].toString()),
+      mealImage: json['meal'] != null ? json['meal']['image_url'] : '',
+    );
+  }
+}
 
+class OrderNotifier extends StateNotifier<List<Order>> {
+  OrderNotifier(this.ref) : super([]);
+
+  final Ref ref;
+  bool isLoading = false;
+  String? errorMessage; // Added error message field
+
+  Future<void> fetchOrders() async {
+    // ... existing fetchOrders code ...
+    final user = ref.read(userProvider);
+    final token = ref.read(userProvider.notifier).token;
+
+    if (user == null || token == null) return;
+
+    isLoading = true;
+    errorMessage = null;
     try {
-      final response = await _dio.get(
-        '/orders',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      final response = await http.get(
+        Uri.parse('${UserNotifier.baseUrl}/orders'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
-      
+
       if (response.statusCode == 200) {
-        final List data = response.data;
-        // Crucial: Update the state with the new list
-        state = data.map((e) => OrderModel.fromJson(e)).toList();
+        final data = jsonDecode(response.body);
+        final List<dynamic> ordersJson = data['orders'];
+        state = ordersJson.map((json) => Order.fromJson(json)).toList();
+      } else {
+        print('Failed to fetch orders: ${response.statusCode}');
       }
     } catch (e) {
-      print("Order Fetch Error: $e");
+      print('Error fetching orders: $e');
+    } finally {
+      isLoading = false;
     }
   }
+  
+  // Place a new order
+  Future<bool> placeOrder(List<Map<String, dynamic>> items, double total) async {
+    final user = ref.read(userProvider);
+    final token = ref.read(userProvider.notifier).token;
 
-  Future<bool> cancelOrder(String? token, int orderId) async {
-    if (token == null) return false;
+    errorMessage = null; // Reset error
+    if (user == null || token == null) {
+        errorMessage = 'User not logged in';
+        return false;
+    }
+
+    isLoading = true;
     try {
-      await _dio.delete(
-        '/orders/$orderId/cancel',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      final response = await http.post(
+        Uri.parse('${UserNotifier.baseUrl}/orders'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'total_amount': total,
+          'items': items,
+        }),
       );
-      await fetchMyOrders(token); 
-      return true;
+
+      print('Place Order Status: ${response.statusCode}');
+      print('Place Order Response: ${response.body}');
+
+      if (response.statusCode == 201) {
+        // Refresh orders list
+        await fetchOrders();
+        return true;
+      } else {
+        final body = jsonDecode(response.body);
+        errorMessage = body['message'] ?? 'Failed to place order';
+        if (body['errors'] != null) {
+            errorMessage = body['errors'].values.first[0];
+        }
+        return false;
+      }
+    } catch (e) {
+      print('Error placing order: $e');
+      errorMessage = 'Connection error: $e';
+      return false;
+    } finally {
+      isLoading = false;
+    }
+  }
+  // Update Order Status
+  Future<bool> updateOrderStatus(int orderId, String status) async {
+    final user = ref.read(userProvider);
+    if (user == null || user.token == null) return false;
+
+    try {
+      final response = await http.put(
+        Uri.parse('${UserNotifier.baseUrl}/orders/$orderId'),
+         headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${user.token}',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'status': status}),
+      );
+
+      if (response.statusCode == 200) {
+        await fetchOrders(); // Refresh list
+        return true;
+      } else {
+        return false;
+      }
     } catch (e) {
       return false;
     }
   }
 }
 
-final orderHistoryProvider = StateNotifierProvider<OrderNotifier, List<OrderModel>>((ref) {
-  return OrderNotifier();
+final orderProvider = StateNotifierProvider<OrderNotifier, List<Order>>((ref) {
+  return OrderNotifier(ref);
 });

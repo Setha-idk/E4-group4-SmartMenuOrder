@@ -10,8 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('meals', function (Blueprint $table) {
-            $table->dropColumn('tags');
+        Schema::table('notifications', function (Blueprint $table) {
+            $table->foreignId('order_id')->nullable()->constrained()->onDelete('cascade')->after('user_id');
         });
     }
 
@@ -20,8 +20,9 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('meals', function (Blueprint $table) {
-            $table->string('tags')->nullable();
+        Schema::table('notifications', function (Blueprint $table) {
+            $table->dropForeign(['order_id']);
+            $table->dropColumn('order_id');
         });
     }
 };

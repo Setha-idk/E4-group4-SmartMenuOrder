@@ -1,6 +1,6 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:group_project/providers/user_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CartItem {
   final int id;
@@ -18,81 +18,52 @@ class CartItem {
     required this.imageUrl,
     this.quantity = 1,
   });
+
+  // Convert to Map for JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'category': category,
+      'price': price,
+      'imageUrl': imageUrl,
+      'quantity': quantity,
+    };
+  }
+
+  // Create from Map
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    return CartItem(
+      id: json['id'],
+      name: json['name'],
+      category: json['category'],
+      price: json['price'],
+      imageUrl: json['imageUrl'],
+      quantity: json['quantity'],
+    );
+  }
 }
 
 class CartNotifier extends StateNotifier<List<CartItem>> {
-  CartNotifier() : super([]);
+  CartNotifier() : super([]) {
+    loadCart();
+  }
 
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:8000/api',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    },
-    followRedirects: false,
-    validateStatus: (status) => status! < 500,
-  ));
-
-  Future<bool> placeOrder(WidgetRef ref) async {
-    final user = ref.read(userProvider);
-    
-    // 1. Debug: Check if user and token exist in state
-    if (user == null) {
-      print("DEBUG: Order failed - User state is null");
-      return false;
+  // Load cart from SharedPreferences
+  Future<void> loadCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartString = prefs.getString('cart_items');
+    if (cartString != null) {
+      final List<dynamic> cartJson = jsonDecode(cartString);
+      state = cartJson.map((item) => CartItem.fromJson(item)).toList();
     }
-    if (user.token == null || user.token!.isEmpty) {
-      print("DEBUG: Order failed - Token is null or empty for user: ${user.username}");
-      return false;
-    }
+  }
 
-    final orderData = {
-      'user_name': user.username,
-      'phone_number': user.phoneNumber,
-      'items': state.map((item) => {
-        'meal_id': item.id,
-        'meal_name': item.name,
-        'quantity': item.quantity,
-        'price': item.price,
-      }).toList(),
-    };
-
-    // 2. Debug: Print the full request details
-    print("--- API REQUEST START ---");
-    print("URL: ${ _dio.options.baseUrl}/orders/batch");
-    print("Token: Bearer ${user.token}");
-    print("Body: $orderData");
-    print("-------------------------");
-
-    try {
-      final response = await _dio.post(
-        '/orders/batch',
-        data: orderData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer ${user.token}',
-          },
-        ),
-      );
-
-      print("DEBUG: Response Status: ${response.statusCode}");
-      print("DEBUG: Response Body: ${response.data}");
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        clearCart();
-        return true;
-      }
-      return false;
-    } on DioException catch (e) {
-      print("--- API ERROR ---");
-      print("Status Code: ${e.response?.statusCode}");
-      print("Error Data: ${e.response?.data}");
-      print("Message: ${e.message}");
-      return false;
-    } catch (e) {
-      print("DEBUG: General Error: $e");
-      return false;
-    }
+  // Save cart to SharedPreferences
+  Future<void> saveCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartString = jsonEncode(state.map((item) => item.toJson()).toList());
+    await prefs.setString('cart_items', cartString);
   }
 
   void addItem(Map<String, dynamic> meal) {
@@ -106,16 +77,60 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
         CartItem(
           id: meal['id'],
           name: meal['meal'],
-          category: meal['category'],
+          category: meal['category'] ?? 'General',
           price: double.tryParse(meal['price']?.toString() ?? '0') ?? 0,
           imageUrl: meal['mealThumb'] ?? '',
         ),
       ];
     }
+    saveCart();
   }
 
-  void removeItem(int id) => state = state.where((item) => item.id != id).toList();
-  void clearCart() => state = [];
+  // Remove item from cart
+  void removeItem(int id) {
+    state = state.where((item) => item.id != id).toList();
+    saveCart();
+  }
+
+  // Increase quantity
+  void increaseQuantity(int id) {
+    final updatedCart = state.map((item) {
+      if (item.id == id) {
+        item.quantity++;
+      }
+      return item;
+    }).toList();
+    state = updatedCart;
+    saveCart();
+  }
+
+  // Decrease quantity
+  void decreaseQuantity(int id) {
+    final updatedCart = state.map((item) {
+      if (item.id == id && item.quantity > 1) {
+        item.quantity--;
+      }
+      return item;
+    }).toList();
+    state = updatedCart;
+    saveCart();
+  }
+
+  // Clear cart
+  void clearCart() {
+    state = [];
+    saveCart();
+  }
+
+  // Get total price
+  double getTotal() {
+    return state.fold(0, (total, item) => total + (item.price * item.quantity));
+  }
+
+  // Get total items count
+  int getItemCount() {
+    return state.fold(0, (total, item) => total + item.quantity);
+  }
 }
 
 final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) => CartNotifier());

@@ -16,17 +16,18 @@ class UserSeeder extends Seeder
         // Admin User
         User::create([
             'name' => 'Admin User',
-            'phone_number' => '0123456789',
+            'email' => 'admin@example.com',
             'password' => Hash::make('admin123'),
-            'is_admin' => true,
+            'role' => 'admin',
+            'telegram_id' => '6821234179',
         ]);
 
         // Regular User
         User::create([
             'name' => 'Test User',
-            'phone_number' => '0987654321',
+            'email' => 'user@example.com',
             'password' => Hash::make('user123'),
-            'is_admin' => false,
+            'role' => 'user',
         ]);
     }
 }

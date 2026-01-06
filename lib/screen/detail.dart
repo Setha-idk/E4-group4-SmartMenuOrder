@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/appbar.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/cart_provider.dart';
-import 'package:group_project/providers/favorite_provider.dart';
+import 'package:group_project/providers/favorites_provider.dart';
+import 'package:group_project/providers/user_provider.dart';
+import 'package:group_project/screen/login_screen.dart';
 
 class Recipe extends ConsumerWidget {
   final Map<String, dynamic> meal;
@@ -12,16 +14,16 @@ class Recipe extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final String mealName = meal['meal'] ?? 'Unknown Meal';
+    final String mealName = meal['meal'] ?? meal['name'] ?? 'Unknown Meal';
     final String category = meal['category'] ?? 'General';
-    final String imageUrl = meal['mealThumb'] ?? '';
+    final String imageUrl = meal['mealThumb'] ?? meal['image_url'] ?? '';
     final String instructions =
         meal['instructions'] ?? 'No instructions available.';
     final String tags = meal['tags'] ?? '';
     final String mealId = meal['id'].toString();
 
     // Watch the favorite provider to get the current state
-    final favoriteIds = ref.watch(favoriteProvider);
+    final favoriteIds = ref.watch(favoritesProvider).map((m) => m['id'].toString()).toList();
     final isFavorite = favoriteIds.contains(mealId);
 
     return Scaffold(
@@ -113,10 +115,18 @@ class Recipe extends ConsumerWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
+                            final user = ref.read(userProvider);
+                            
+                            // Check if guest
+                            if (user?.isGuest == true) {
+                              _showLoginRequiredDialog(context, 'add items to cart');
+                              return;
+                            }
+                            
                             ref.read(cartProvider.notifier).addItem(meal);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('${meal['meal']} added to cart!'),
+                                content: Text('$mealName added to cart!'),
                                 duration: const Duration(seconds: 2),
                                 action: SnackBarAction(
                                   label: 'View Cart',
@@ -139,11 +149,32 @@ class Recipe extends ConsumerWidget {
                       const SizedBox(width: 12),
                       IconButton(
                         onPressed: () {
-                          // Call the provider to toggle the favorite state
-                          ref.read(favoriteProvider.notifier).toggleFavorite(mealId);
+                          final user = ref.read(userProvider);
+                          
+                          // Check if guest
+                          if (user?.isGuest == true) {
+                            _showLoginRequiredDialog(context, 'save favorites');
+                            return;
+                          }
+                          
+                          final isFav = ref.read(favoritesProvider.notifier).isFavorite(meal['id']);
+                          ref.read(favoritesProvider.notifier).toggleFavorite(meal);
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                isFav 
+                                  ? '$mealName removed from favorites!' 
+                                  : '$mealName added to favorites!',
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
                         },
                         icon: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          ref.watch(isFavoriteProvider(meal['id']))
+                              ? Icons.favorite
+                              : Icons.favorite_border,
                         ),
                         iconSize: 28,
                         color: isFavorite ? Colors.red : maincolor,
@@ -155,6 +186,33 @@ class Recipe extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showLoginRequiredDialog(BuildContext context, String action) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Required'),
+        content: Text('Please login to $action.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: maincolor),
+            child: const Text('Login'),
+          ),
+        ],
       ),
     );
   }

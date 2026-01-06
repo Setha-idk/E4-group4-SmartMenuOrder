@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/appbar.dart';
 import 'package:group_project/consent/colors.dart';
-import 'package:group_project/providers/favorite_provider.dart';
+// Use the PLURAL provider (Backend connected)
+import 'package:group_project/providers/favorites_provider.dart'; 
 import 'package:group_project/screen/detail.dart';
 import 'package:group_project/providers/get_provider.dart';
 
@@ -184,13 +185,11 @@ class _CategoryState extends ConsumerState<Category> {
   Widget _buildMealCard(BuildContext context, Map<String, dynamic> meal) {
     final String category = meal['category'] ?? 'General';
     final String tags = meal['tags'] ?? '';
+    final String mealId = meal['id'].toString();
 
-    // Watch the list of favorite IDs
-    final favoriteIds = ref.watch(favoriteProvider);
-    // Determine if the current meal is a favorite
-    final isFavorite = favoriteIds.contains(meal['id'].toString());
-    // Get the meal ID
-    final mealId = meal['id'].toString();
+    // Watch the Backend Favorites Provider
+    final favoriteIds = ref.watch(favoritesProvider).map((m) => m['id'].toString()).toList();
+    final isFavorite = favoriteIds.contains(mealId);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -284,6 +283,19 @@ class _CategoryState extends ConsumerState<Category> {
                           ),
                         ),
                       ),
+
+                    // Price Display
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      child: Text(
+                        '\$${meal['price'] ?? '0.00'}',
+                        style: TextStyle(
+                          fontSize: titleSize * 0.9, // Slightly smaller than title
+                          color: maincolor,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 Positioned(
@@ -298,7 +310,8 @@ class _CategoryState extends ConsumerState<Category> {
                         size: cardHeight * 0.1, // Dynamic icon size
                       ),
                       onPressed: () {
-                        ref.read(favoriteProvider.notifier).toggleFavorite(mealId);
+                         // Use Plural Provider logic which takes MAP
+                         ref.read(favoritesProvider.notifier).toggleFavorite(meal);
                       },
                       splashRadius: 20,
                     ),
