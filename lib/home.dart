@@ -121,10 +121,17 @@ class _CategoryState extends ConsumerState<Category> {
 
                   final matchesCategory =
                       selectedCategory == "All" || mealCat == selectedCategory;
-                  final matchesSearch = (meal['meal'] ?? '')
-                      .toString()
-                      .toLowerCase()
-                      .contains(searchQuery);
+                  final matchesSearch =
+                      (meal['name'] ?? '').toString().toLowerCase().contains(
+                        searchQuery,
+                      ) ||
+                      (meal['description'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .contains(searchQuery) ||
+                      (meal['tags'] ?? '').toString().toLowerCase().contains(
+                        searchQuery,
+                      );
                   return matchesCategory && matchesSearch;
                 }).toList();
 

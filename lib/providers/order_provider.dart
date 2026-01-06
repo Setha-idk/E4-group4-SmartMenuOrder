@@ -38,7 +38,7 @@ class OrderNotifier extends StateNotifier<List<OrderModel>> {
         '/orders',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      
+
       if (response.statusCode == 200) {
         final List data = response.data;
         // Crucial: Update the state with the new list
@@ -56,7 +56,7 @@ class OrderNotifier extends StateNotifier<List<OrderModel>> {
         '/orders/$orderId/cancel',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      await fetchMyOrders(token); 
+      await fetchMyOrders(token);
       return true;
     } catch (e) {
       return false;
@@ -64,6 +64,7 @@ class OrderNotifier extends StateNotifier<List<OrderModel>> {
   }
 }
 
-final orderHistoryProvider = StateNotifierProvider<OrderNotifier, List<OrderModel>>((ref) {
-  return OrderNotifier();
-});
+final orderHistoryProvider =
+    StateNotifierProvider<OrderNotifier, List<OrderModel>>((ref) {
+      return OrderNotifier();
+    });
