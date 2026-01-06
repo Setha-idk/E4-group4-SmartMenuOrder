@@ -15,7 +15,9 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(adminOrderProvider.notifier).fetchOrders(ref));
+    Future.microtask(
+      () => ref.read(adminOrderProvider.notifier).fetchOrders(ref),
+    );
   }
 
   @override
@@ -39,9 +41,24 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
               _buildSectionHeader('Incoming Orders'),
               const SizedBox(height: 15),
               _buildStatusSection(orders, 'pending', 'New Orders', Colors.red),
-              _buildStatusSection(orders, 'processing', 'In Progress', Colors.orange),
-              _buildStatusSection(orders, 'completed', 'Completed', Colors.green),
-              _buildStatusSection(orders, 'cancelled', 'Cancelled', Colors.grey),
+              _buildStatusSection(
+                orders,
+                'processing',
+                'In Progress',
+                Colors.orange,
+              ),
+              _buildStatusSection(
+                orders,
+                'completed',
+                'Completed',
+                Colors.green,
+              ),
+              _buildStatusSection(
+                orders,
+                'cancelled',
+                'Cancelled',
+                Colors.grey,
+              ),
               const SizedBox(height: 30),
               _buildSectionHeader('Management'),
               const SizedBox(height: 15),
@@ -53,17 +70,24 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                 mainAxisSpacing: 16,
                 children: [
                   _buildMenuCard(
-                    context, 
-                    'Meals', 
-                    Icons.restaurant, 
+                    context,
+                    'Meals',
+                    Icons.restaurant,
                     Colors.orange,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const MealManageScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const MealManageScreen(),
+                      ),
                     ),
                   ),
-                  _buildMenuCard(context, 'Categories', Icons.category, Colors.blue),
-                  _buildMenuCard(context, 'Tags', Icons.label, Colors.green),
+                  _buildMenuCard(
+                    context,
+                    'Categories',
+                    Icons.category,
+                    Colors.blue,
+                  ),
+
                   _buildMenuCard(context, 'Users', Icons.people, Colors.purple),
                 ],
               ),
@@ -77,15 +101,27 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
     );
   }
 
-  Widget _buildStatusSection(List<AdminOrder> orders, String status, String title, Color color) {
+  Widget _buildStatusSection(
+    List<AdminOrder> orders,
+    String status,
+    String title,
+    Color color,
+  ) {
     final filteredOrders = orders.where((o) => o.status == status).toList();
 
     return ExpansionTile(
-      title: Text("$title (${filteredOrders.length})", style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+      title: Text(
+        "$title (${filteredOrders.length})",
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+      ),
       children: [
         Container(
           decoration: BoxDecoration(
@@ -93,7 +129,10 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: filteredOrders.isEmpty
-              ? const Padding(padding: EdgeInsets.all(16.0), child: Text("No orders"))
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text("No orders"),
+                )
               : ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -102,17 +141,30 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                   itemBuilder: (context, index) {
                     final order = filteredOrders[index];
                     return ListTile(
-                      title: Text("${order.userName} - ${order.mealName} (x${order.quantity})"),
+                      title: Text(
+                        "${order.userName} - ${order.mealName} (x${order.quantity})",
+                      ),
                       subtitle: Text("Phone: ${order.phoneNumber}"),
                       trailing: DropdownButton<String>(
                         value: order.status,
                         underline: const SizedBox(),
-                        items: ['pending', 'processing', 'completed', 'cancelled']
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 14))))
-                            .toList(),
+                        items:
+                            ['pending', 'processing', 'completed', 'cancelled']
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(
+                                      s,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                         onChanged: (val) {
                           if (val != null) {
-                            ref.read(adminOrderProvider.notifier).updateStatus(ref, order.id, val);
+                            ref
+                                .read(adminOrderProvider.notifier)
+                                .updateStatus(ref, order.id, val);
                           }
                         },
                       ),
@@ -124,7 +176,13 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, {VoidCallback? onTap}) {
+  Widget _buildMenuCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return InkWell(
       onTap: onTap ?? () => print('Navigating to $title CRUD'),
       child: Container(

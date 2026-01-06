@@ -17,7 +17,11 @@ class MealManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
     }
   }
 
-  Future<bool> saveMeal(Map<String, dynamic> data, {int? id, required String token}) async {
+  Future<bool> saveMeal(
+    Map<String, dynamic> data, {
+    int? id,
+    required String token,
+  }) async {
     try {
       final options = Options(headers: {'Authorization': 'Bearer $token'});
       if (id == null) {
@@ -28,13 +32,21 @@ class MealManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
       fetchMeals();
       return true;
     } catch (e) {
+      if (e is DioException) {
+        print('Dio Error: ${e.response?.data}');
+        print('Status Code: ${e.response?.statusCode}');
+      }
+      print('Error saving meal: $e');
       return false;
     }
   }
 
   Future<void> deleteMeal(int id, String token) async {
     try {
-      await _dio.delete('/meals/$id', options: Options(headers: {'Authorization': 'Bearer $token'}));
+      await _dio.delete(
+        '/meals/$id',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
       fetchMeals();
     } catch (e) {
       print(e);
@@ -42,4 +54,7 @@ class MealManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
   }
 }
 
-final mealManageProvider = StateNotifierProvider<MealManageNotifier, AsyncValue<List<dynamic>>>((ref) => MealManageNotifier());
+final mealManageProvider =
+    StateNotifierProvider<MealManageNotifier, AsyncValue<List<dynamic>>>(
+      (ref) => MealManageNotifier(),
+    );

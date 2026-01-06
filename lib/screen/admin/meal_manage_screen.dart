@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/providers/meal_manage_provider.dart';
 import 'package:group_project/providers/user_provider.dart';
+import 'package:group_project/providers/get_provider.dart';
 
 class MealManageScreen extends ConsumerStatefulWidget {
   const MealManageScreen({super.key});
@@ -109,50 +110,135 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
     final priceController = TextEditingController(
       text: meal?['price']?.toString(),
     );
-    // ... Add other controllers for category_id, description, image_url
+    final descriptionController = TextEditingController(
+      text: meal?['description'],
+    );
+    final imageUrlController = TextEditingController(text: meal?['image_url']);
+    final tagsController = TextEditingController(text: meal?['tags']);
+
+    // Parse initial values
+    int? selectedCategoryId = meal?['category_id'] != null
+        ? int.tryParse(meal!['category_id'].toString())
+        : null;
+
+    // Handle is_available mostly as boolean but be safe
+    bool isAvailable = true;
+    if (meal != null) {
+      if (meal['is_available'] is bool) {
+        isAvailable = meal['is_available'];
+      } else if (meal['is_available'] is int) {
+        isAvailable = meal['is_available'] == 1;
+      }
+    }
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(meal == null ? "Add Meal" : "Edit Meal"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: "Name"),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text(meal == null ? "Add Meal" : "Edit Meal"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: "Name"),
+                  ),
+                  TextField(
+                    controller: priceController,
+                    decoration: const InputDecoration(labelText: "Price"),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(labelText: "Description"),
+                    maxLines: 3,
+                  ),
+                  TextField(
+                    controller: imageUrlController,
+                    decoration: const InputDecoration(labelText: "Image URL"),
+                  ),
+                  TextField(
+                    controller: tagsController,
+                    decoration: const InputDecoration(
+                      labelText: "Tags (comma separated)",
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Category Dropdown
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final categoriesAsync = ref.watch(categoriesProvider);
+                      return categoriesAsync.when(
+                        data: (categories) {
+                          return DropdownButtonFormField<int>(
+                            value: selectedCategoryId,
+                            decoration: const InputDecoration(
+                              labelText: "Category",
+                            ),
+                            items: categories.map((cat) {
+                              return DropdownMenuItem<int>(
+                                value: int.tryParse(cat['id'].toString()),
+                                child: Text(cat['name'].toString()),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setState(() => selectedCategoryId = val);
+                            },
+                          );
+                        },
+                        loading: () => const LinearProgressIndicator(),
+                        error: (_, __) =>
+                            const Text("Error loading categories"),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    title: const Text("Is Available"),
+                    value: isAvailable,
+                    onChanged: (val) => setState(() => isAvailable = val),
+                  ),
+                ],
               ),
-              TextField(
-                controller: priceController,
-                decoration: const InputDecoration(labelText: "Price"),
-                keyboardType: TextInputType.number,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
               ),
-              // ... Add other fields
+              ElevatedButton(
+                onPressed: () async {
+                  if (selectedCategoryId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Please select a category")),
+                    );
+                    return;
+                  }
+
+                  final data = {
+                    "name": nameController.text,
+                    "price": priceController.text,
+                    "category_id": selectedCategoryId,
+                    "description": descriptionController.text,
+                    "image_url": imageUrlController.text,
+                    "tags": tagsController.text,
+                    "is_available": isAvailable,
+                  };
+
+                  final success = await ref
+                      .read(mealManageProvider.notifier)
+                      .saveMeal(data, id: meal?['id'], token: token!);
+                  if (success) Navigator.pop(context);
+                },
+                child: const Text("Save"),
+              ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final data = {
-                "name": nameController.text,
-                "price": priceController.text,
-                "category_id": 1, // Example: logic to select category needed
-                "description": "Description here",
-                "image_url": "https://example.com/image.jpg",
-              };
-              final success = await ref
-                  .read(mealManageProvider.notifier)
-                  .saveMeal(data, id: meal?['id'], token: token!);
-              if (success) Navigator.pop(context);
-            },
-            child: const Text("Save"),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

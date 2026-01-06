@@ -15,6 +15,7 @@ class Meal extends Model
         'description',
         'price',
         'image_url',
+        'tags',
         'is_available'
     ];
 
@@ -29,14 +30,6 @@ class Meal extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    /**
-     * The tags that belong to the meal.
-     */
-    public function tags()
-    {
-        return $this->belongsToMany(Tag::class);
     }
     public function orders()
     {

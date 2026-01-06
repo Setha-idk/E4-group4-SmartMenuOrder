@@ -128,7 +128,7 @@ class MealSeeder extends Seeder
                 'price' => 15.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg',
                 'tags' => 'Italian, Meat',
-                'instructions' => 'Prepare pizza dough. Add tomato sauce, mozzarella, and pepperoni. Bake at 450°F for 12-15 minutes.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()
@@ -140,7 +140,7 @@ class MealSeeder extends Seeder
                 'price' => 13.99,
                 'image_url' => 'https://www.themealdb.com/images/media/meals/k420tj1585565244.jpg',
                 'tags' => 'American, Bacon',
-                'instructions' => 'Grill beef patty with bacon. Add cheese and BBQ sauce. Serve on toasted bun.',
+                
                 'is_available' => true,
                 'created_at' => now(),
                 'updated_at' => now()

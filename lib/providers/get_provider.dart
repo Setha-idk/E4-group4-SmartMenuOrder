@@ -51,6 +51,7 @@ List<Map<String, dynamic>> _getMockMeals() {
   return [
     {
       'id': 1,
+      'category_id': 1,
       'name': 'Spaghetti Carbonara',
       'category': 'Pasta',
       'image_url':
@@ -61,6 +62,7 @@ List<Map<String, dynamic>> _getMockMeals() {
     },
     {
       'id': 2,
+      'category_id': 2,
       'name': 'Margherita Pizza',
       'category': 'Pizza',
       'image_url':
@@ -71,6 +73,7 @@ List<Map<String, dynamic>> _getMockMeals() {
     },
     {
       'id': 3,
+      'category_id': 3,
       'name': 'Caesar Salad',
       'category': 'Salad',
       'image_url':
@@ -81,6 +84,7 @@ List<Map<String, dynamic>> _getMockMeals() {
     },
     {
       'id': 4,
+      'category_id': 4,
       'name': 'Cheeseburger',
       'category': 'Burger',
       'image_url':
@@ -91,6 +95,7 @@ List<Map<String, dynamic>> _getMockMeals() {
     },
     {
       'id': 5,
+      'category_id': 5,
       'name': 'Chicken Tikka',
       'category': 'Indian',
       'image_url':
@@ -100,6 +105,7 @@ List<Map<String, dynamic>> _getMockMeals() {
     },
     {
       'id': 6,
+      'category_id': 6,
       'name': 'Pad Thai',
       'category': 'Thai',
       'image_url':
@@ -109,6 +115,7 @@ List<Map<String, dynamic>> _getMockMeals() {
     },
     {
       'id': 7,
+      'category_id': 7,
       'name': 'Chocolate Cake',
       'category': 'Dessert',
       'image_url':
@@ -118,6 +125,7 @@ List<Map<String, dynamic>> _getMockMeals() {
     },
     {
       'id': 8,
+      'category_id': 8,
       'name': 'Sushi Roll',
       'category': 'Japanese',
       'image_url':
@@ -131,13 +139,13 @@ List<Map<String, dynamic>> _getMockMeals() {
 // Mock data for categories (fallback when backend is not available)
 List<Map<String, dynamic>> _getMockCategories() {
   return [
-    {'category': 'Pasta'},
-    {'category': 'Pizza'},
-    {'category': 'Salad'},
-    {'category': 'Burger'},
-    {'category': 'Indian'},
-    {'category': 'Thai'},
-    {'category': 'Dessert'},
-    {'category': 'Japanese'},
+    {'id': 1, 'name': 'Pasta'},
+    {'id': 2, 'name': 'Pizza'},
+    {'id': 3, 'name': 'Salad'},
+    {'id': 4, 'name': 'Burger'},
+    {'id': 5, 'name': 'Indian'},
+    {'id': 6, 'name': 'Thai'},
+    {'id': 7, 'name': 'Dessert'},
+    {'id': 8, 'name': 'Japanese'},
   ];
 }

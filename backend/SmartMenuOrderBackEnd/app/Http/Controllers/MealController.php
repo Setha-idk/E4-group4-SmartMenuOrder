@@ -18,9 +18,10 @@ class MealController extends Controller
         $validated = $request->validate([
             'name' => 'required|string',
             'category_id' => 'required|exists:categories,id',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'price' => 'required|numeric',
-            'image_url' => 'required|string',
+            'image_url' => 'nullable|string',
+            'tags' => 'nullable|string',
             'is_available' => 'boolean'
         ]);
 
@@ -36,7 +37,7 @@ class MealController extends Controller
             'description' => 'string',
             'price' => 'numeric',
             'image_url' => 'string',
-            'instructions' => 'nullable|string',
+            'tags' => 'nullable|string',
             'is_available' => 'boolean'
         ]);
 
