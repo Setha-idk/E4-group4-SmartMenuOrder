@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/appbar.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/favorite_provider.dart';
-import 'package:group_project/screen/detail.dart';
+import 'package:group_project/screen/detail.dart'; // Updated import
 import 'package:group_project/providers/get_provider.dart';
 
 class Category extends ConsumerStatefulWidget {
@@ -44,21 +44,17 @@ class _CategoryState extends ConsumerState<Category> {
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  )
                 ],
               ),
               child: TextField(
                 controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value.toLowerCase();
-                  });
-                },
+                onChanged: (value) => setState(() => searchQuery = value.toLowerCase()),
                 decoration: InputDecoration(
-                  hintText: "Search name, category, or tags...",
-                  prefixIcon: Icon(Icons.search, color: maincolor),
+                  hintText: "Search your favorite meal...",
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   suffixIcon: searchQuery.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear),
@@ -75,56 +71,32 @@ class _CategoryState extends ConsumerState<Category> {
             ),
           ),
 
-          // Filter Chips with BoxShadow
+          // Category Chips
           categoriesAsync.when(
             data: (categories) {
+              final allCategories = [
+                "All",
+                ...categories.map((c) => (c['name'] ?? 'Unknown').toString())
+              ];
               return SizedBox(
-                height: 60, // Increased height to accommodate shadow
+                height: 60,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  itemCount: categories.length + 1,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: allCategories.length,
                   itemBuilder: (context, index) {
-                    bool isAll = index == 0;
-                    String name =
-                        isAll ? "All" : categories[index - 1]['category'];
-                    bool isSelected = selectedCategory == name;
-
+                    final category = allCategories[index];
+                    final isSelected = selectedCategory == category;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(2, 2),
-                            ),
-                          ],
-                        ),
-                        child: ChoiceChip(
-                          label: Text(name),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() => selectedCategory = name);
-                            }
-                          },
-                          // Removing default border to make shadow look cleaner
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                            side: BorderSide.none,
-                          ),
-                          selectedColor: maincolor,
-                          backgroundColor: cardBackground,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : font,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: ChoiceChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (selected) => setState(() => selectedCategory = category),
+                        selectedColor: maincolor,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     );
@@ -133,47 +105,29 @@ class _CategoryState extends ConsumerState<Category> {
               );
             },
             loading: () => const SizedBox(height: 60),
-            error: (e, s) => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox(height: 60),
           ),
 
-          // Filtered List
+          // Meals Grid
           Expanded(
             child: mealsAsync.when(
               data: (meals) {
-                final filtered = meals.where((m) {
-                  final name = (m['meal']?.toString() ?? "").toLowerCase();
-                  final category =
-                      (m['category']?.toString() ?? "").toLowerCase();
-                  final tags = (m['tags']?.toString() ?? "").toLowerCase();
-
-                  bool matchesCategoryFilter = (selectedCategory == "All") ||
-                      category.contains(selectedCategory.toLowerCase());
-
-                  bool matchesSearchQuery = name.contains(searchQuery) ||
-                      category.contains(searchQuery) ||
-                      tags.contains(searchQuery);
-
-                  return matchesCategoryFilter && matchesSearchQuery;
+                final filteredMeals = meals.where((meal) {
+                  // Safe category extraction for filtering
+                  final mealCat = (meal['category'] is Map)
+                      ? (meal['category']['name'] ?? '')
+                      : (meal['category']?.toString() ?? '');
+                  
+                  final matchesCategory = selectedCategory == "All" || mealCat == selectedCategory;
+                  final matchesSearch = (meal['meal'] ?? '').toString().toLowerCase().contains(searchQuery);
+                  return matchesCategory && matchesSearch;
                 }).toList();
 
-                return GridView.builder(
-                  padding: const EdgeInsets.all(15),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 3 / 4,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) =>
-                      _buildMealCard(context, filtered[index]),
-                );
+                if (filteredMeals.isEmpty) return const Center(child: Text("No meals found"));
+                return _buildMealGrid(filteredMeals);
               },
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, s) =>
-                  const Center(child: Text("Error loading meals")),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text("Error: $err")),
             ),
           ),
         ],
@@ -181,130 +135,121 @@ class _CategoryState extends ConsumerState<Category> {
     );
   }
 
-  Widget _buildMealCard(BuildContext context, Map<String, dynamic> meal) {
-    final String category = meal['category'] ?? 'General';
-    final String tags = meal['tags'] ?? '';
+  Widget _buildMealGrid(List<dynamic> filteredMeals) {
+    final favorites = ref.watch(favoriteProvider);
 
-    // Watch the list of favorite IDs
-    final favoriteIds = ref.watch(favoriteProvider);
-    // Determine if the current meal is a favorite
-    final isFavorite = favoriteIds.contains(meal['id'].toString());
-    // Get the meal ID
-    final mealId = meal['id'].toString();
-
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => Recipe(meal: meal)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final cardHeight = constraints.maxHeight;
-
-          // Define minimum font sizes
-          const minTitleSize = 12.0;
-          const minCategorySize = 10.0;
-          const minTagSize = 8.0;
-
-          // Calculate dynamic font sizes based on card height
-          final titleSize = (cardHeight * 0.07).clamp(minTitleSize, 20.0); // Capped at 20
-          final categorySize = (cardHeight * 0.05).clamp(minCategorySize, 16.0);
-          final tagSize = (cardHeight * 0.04).clamp(minTagSize, 14.0);
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(mealsProvider.future),
+      child: GridView.builder(
+        padding: const EdgeInsets.all(15),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 15,
+          mainAxisSpacing: 15,
+          childAspectRatio: 0.65,
+        ),
+        itemCount: filteredMeals.length,
+        itemBuilder: (context, index) {
+          final meal = filteredMeals[index];
           
-          final imageHeight = cardHeight * 0.55;
+          // --- Defensive Data Extraction ---
+          final int mealId = meal['id'] ?? 0;
+          final String mealName = meal['meal'] ?? 'Unknown';
+          final String imageUrl = meal['mealThumb'] ?? '';
+          final String price = meal['price']?.toString() ?? '0.00';
+          
+          // Fix for the Map vs String Category error
+          final String category = (meal['category'] is Map)
+              ? (meal['category']['name'] ?? 'General')
+              : (meal['category']?.toString() ?? 'General');
+          
+          // Fix for favorite type error (int to String)
+          final bool isFavorite = favorites.contains(mealId.toString());
 
-          return Container(
-            decoration: BoxDecoration(
-              color: cardBackground,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 2,
-                  offset: Offset(5, 5),
-                ),
-              ],
+          return GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Recipe(meal: meal)),
             ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Container(
-                        height: imageHeight,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(
-                            image: NetworkImage(meal['mealThumb'] ?? ''),
-                            fit: BoxFit.cover,
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardBackground,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  )
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            image: DecorationImage(
+                              image: NetworkImage(imageUrl),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        meal['meal'] ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: titleSize,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        category,
-                        style: TextStyle(
-                          fontSize: categorySize,
-                          color: maincolor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    if (tags.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 2,
-                        ),
-                        child: Text(
-                          tags,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: tagSize,
-                            color: font.withOpacity(0.6),
-                            fontStyle: FontStyle.italic,
-                          ),
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              mealName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              category,
+                              style: TextStyle(color: font.withOpacity(0.6), fontSize: 12),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "\$$price",
+                                  style: TextStyle(color: maincolor, fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(color: maincolor, shape: BoxShape.circle),
+                                  child: const Icon(Icons.add, color: Colors.white, size: 20),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
-                Positioned(
-                  top: 15,
-                  right: 15,
-                  child: Material(
-                    color: Colors.transparent,
+                    ],
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
                     child: IconButton(
                       icon: Icon(
                         isFavorite ? Icons.favorite : Icons.favorite_border,
                         color: isFavorite ? Colors.red : Colors.white,
-                        size: cardHeight * 0.1, // Dynamic icon size
                       ),
                       onPressed: () {
-                        ref.read(favoriteProvider.notifier).toggleFavorite(mealId);
+                        // Ensure ID is passed as String
+                        ref.read(favoriteProvider.notifier).toggleFavorite(mealId.toString());
                       },
-                      splashRadius: 20,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

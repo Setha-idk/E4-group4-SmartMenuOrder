@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/admin_order_provider.dart';
+import 'package:group_project/screen/admin/meal_manage_screen.dart'; // Import the management screen
 
 class AdminDashboard extends ConsumerStatefulWidget {
   const AdminDashboard({super.key});
@@ -51,7 +52,16 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 children: [
-                  _buildMenuCard(context, 'Meals', Icons.restaurant, Colors.orange),
+                  _buildMenuCard(
+                    context, 
+                    'Meals', 
+                    Icons.restaurant, 
+                    Colors.orange,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MealManageScreen()),
+                    ),
+                  ),
                   _buildMenuCard(context, 'Categories', Icons.category, Colors.blue),
                   _buildMenuCard(context, 'Tags', Icons.label, Colors.green),
                   _buildMenuCard(context, 'Users', Icons.people, Colors.purple),
@@ -93,7 +103,7 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
                     final order = filteredOrders[index];
                     return ListTile(
                       title: Text("${order.userName} - ${order.mealName} (x${order.quantity})"),
-                      subtitle: Text("Phone: ${order.phoneNumber}"), // Verified: Displaying phone number
+                      subtitle: Text("Phone: ${order.phoneNumber}"),
                       trailing: DropdownButton<String>(
                         value: order.status,
                         underline: const SizedBox(),
@@ -114,9 +124,9 @@ class _AdminDashboardState extends ConsumerState<AdminDashboard> {
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color) {
+  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, {VoidCallback? onTap}) {
     return InkWell(
-      onTap: () => print('Navigating to $title CRUD'),
+      onTap: onTap ?? () => print('Navigating to $title CRUD'),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

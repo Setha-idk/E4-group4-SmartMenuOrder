@@ -22,6 +22,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/batch', [OrderController::class, 'batchStore']);
 
     Route::delete('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+
+    Route::apiResource('meals', MealController::class)->except(['index']);
 });
 // Public Routes
 Route::post('/register', [RegisteredUserController::class, 'store']);
