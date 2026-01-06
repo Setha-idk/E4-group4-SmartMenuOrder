@@ -32,48 +32,65 @@ class _CategoryManageScreenState extends ConsumerState<CategoryManageScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(category == null ? 'Add Category' : 'Edit Category'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Category Name'),
-              ),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-              ),
-              TextField(
-                controller: imageUrlController,
-                decoration: const InputDecoration(labelText: 'Image URL'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final authState = ref.read(userProvider);
-              final token = authState?.token;
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final notifier = ref.read(categoryManageProvider.notifier);
 
-              if (token == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Not authenticated')),
-                );
-                return;
-              }
+          return AlertDialog(
+            title: Text(category == null ? 'Add Category' : 'Edit Category'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Category Name',
+                      errorText: notifier.fieldErrors?['name'] != null
+                          ? notifier.fieldErrors!['name'][0]
+                          : null,
+                    ),
+                  ),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      errorText: notifier.fieldErrors?['description'] != null
+                          ? notifier.fieldErrors!['description'][0]
+                          : null,
+                    ),
+                    maxLines: 3,
+                  ),
+                  TextField(
+                    controller: imageUrlController,
+                    decoration: InputDecoration(
+                      labelText: 'Image URL',
+                      errorText: notifier.fieldErrors?['image_url'] != null
+                          ? notifier.fieldErrors!['image_url'][0]
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final authState = ref.read(userProvider);
+                  final token = authState?.token;
 
-              final success = await ref
-                  .read(categoryManageProvider.notifier)
-                  .saveCategory(
+                  if (token == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Not authenticated')),
+                    );
+                    return;
+                  }
+
+                  final success = await notifier.saveCategory(
                     {
                       'name': nameController.text,
                       'description': descriptionController.text,
@@ -83,13 +100,17 @@ class _CategoryManageScreenState extends ConsumerState<CategoryManageScreen> {
                     token: token,
                   );
 
-              if (success) {
-                if (mounted) Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+                  if (success) {
+                    if (mounted) Navigator.pop(context);
+                  } else {
+                    setDialogState(() {}); // Rebuild to show errors
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -8,6 +8,7 @@ use App\Http\Controllers\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('meals', MealController::class)->except(['index']);
     Route::apiResource('categories', CategoryController::class)->except(['index']);
+    Route::apiResource('users', UserController::class);
 });
 // Public Routes
 Route::post('/register', [RegisteredUserController::class, 'store']);
@@ -41,6 +43,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::put('/user/update', [UserController::class, 'updateProfile']);
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
 });

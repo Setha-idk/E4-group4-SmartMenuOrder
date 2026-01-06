@@ -134,7 +134,9 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (context, setDialogState) {
+          final notifier = ref.read(mealManageProvider.notifier);
+
           return AlertDialog(
             title: Text(meal == null ? "Add Meal" : "Edit Meal"),
             content: SingleChildScrollView(
@@ -143,28 +145,51 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: "Name"),
+                    decoration: InputDecoration(
+                      labelText: "Name",
+                      errorText: notifier.fieldErrors?['name'] != null
+                          ? notifier.fieldErrors!['name'][0]
+                          : null,
+                    ),
                   ),
                   TextField(
                     controller: priceController,
-                    decoration: const InputDecoration(labelText: "Price"),
+                    decoration: InputDecoration(
+                      labelText: "Price",
+                      errorText: notifier.fieldErrors?['price'] != null
+                          ? notifier.fieldErrors!['price'][0]
+                          : null,
+                    ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                   ),
                   TextField(
                     controller: descriptionController,
-                    decoration: const InputDecoration(labelText: "Description"),
+                    decoration: InputDecoration(
+                      labelText: "Description",
+                      errorText: notifier.fieldErrors?['description'] != null
+                          ? notifier.fieldErrors!['description'][0]
+                          : null,
+                    ),
                     maxLines: 3,
                   ),
                   TextField(
                     controller: imageUrlController,
-                    decoration: const InputDecoration(labelText: "Image URL"),
+                    decoration: InputDecoration(
+                      labelText: "Image URL",
+                      errorText: notifier.fieldErrors?['image_url'] != null
+                          ? notifier.fieldErrors!['image_url'][0]
+                          : null,
+                    ),
                   ),
                   TextField(
                     controller: tagsController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: "Tags (comma separated)",
+                      errorText: notifier.fieldErrors?['tags'] != null
+                          ? notifier.fieldErrors!['tags'][0]
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -176,8 +201,12 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
                         data: (categories) {
                           return DropdownButtonFormField<int>(
                             value: selectedCategoryId,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: "Category",
+                              errorText:
+                                  notifier.fieldErrors?['category_id'] != null
+                                  ? notifier.fieldErrors!['category_id'][0]
+                                  : null,
                             ),
                             items: categories.map((cat) {
                               return DropdownMenuItem<int>(
@@ -186,7 +215,7 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
                               );
                             }).toList(),
                             onChanged: (val) {
-                              setState(() => selectedCategoryId = val);
+                              setDialogState(() => selectedCategoryId = val);
                             },
                           );
                         },
@@ -200,7 +229,7 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
                   SwitchListTile(
                     title: const Text("Is Available"),
                     value: isAvailable,
-                    onChanged: (val) => setState(() => isAvailable = val),
+                    onChanged: (val) => setDialogState(() => isAvailable = val),
                   ),
                 ],
               ),
@@ -213,9 +242,11 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
               ElevatedButton(
                 onPressed: () async {
                   if (selectedCategoryId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Please select a category")),
-                    );
+                    setDialogState(() {
+                      notifier.fieldErrors = {
+                        'category_id': ['Please select a category'],
+                      };
+                    });
                     return;
                   }
 
@@ -229,10 +260,16 @@ class _MealManageScreenState extends ConsumerState<MealManageScreen> {
                     "is_available": isAvailable,
                   };
 
-                  final success = await ref
-                      .read(mealManageProvider.notifier)
-                      .saveMeal(data, id: meal?['id'], token: token!);
-                  if (success) Navigator.pop(context);
+                  final success = await notifier.saveMeal(
+                    data,
+                    id: meal?['id'],
+                    token: token!,
+                  );
+                  if (success) {
+                    Navigator.pop(context);
+                  } else {
+                    setDialogState(() {}); // Rebuild to show errors
+                  }
                 },
                 child: const Text("Save"),
               ),

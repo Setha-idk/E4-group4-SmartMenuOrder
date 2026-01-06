@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:group_project/providers/user_provider.dart';
 
-class MealManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
-  MealManageNotifier() : super(const AsyncValue.loading());
+class UserManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
+  UserManageNotifier() : super(const AsyncValue.loading());
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -15,32 +14,36 @@ class MealManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
     ),
   );
 
-  String? errorMessage;
-  Map<String, dynamic>? fieldErrors;
-
-  Future<void> fetchMeals() async {
+  Future<void> fetchUsers(String token) async {
     state = const AsyncValue.loading();
     try {
-      final response = await _dio.get('/meals');
+      final response = await _dio.get(
+        '/users',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
       state = AsyncValue.data(response.data);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
-  Future<bool> saveMeal(
+  String? errorMessage;
+  Map<String, dynamic>? fieldErrors;
+
+  Future<bool> saveUser(
     Map<String, dynamic> data, {
     int? id,
     required String token,
   }) async {
     try {
+      errorMessage = null;
       final options = Options(headers: {'Authorization': 'Bearer $token'});
       if (id == null) {
-        await _dio.post('/meals', data: data, options: options);
+        await _dio.post('/users', data: data, options: options);
       } else {
-        await _dio.put('/meals/$id', data: data, options: options);
+        await _dio.put('/users/$id', data: data, options: options);
       }
-      fetchMeals();
+      fetchUsers(token);
       return true;
     } catch (e) {
       if (e is DioException) {
@@ -53,28 +56,28 @@ class MealManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
             errorMessage = e.response?.data['message'] ?? 'Validation error';
           }
         } else {
-          errorMessage = e.response?.data['message'] ?? 'Error saving meal';
+          errorMessage = e.response?.data['message'] ?? 'Error saving user';
         }
       }
-      print('Error saving meal: $e');
+      print('Error saving user: $e');
       return false;
     }
   }
 
-  Future<void> deleteMeal(int id, String token) async {
+  Future<void> deleteUser(int id, String token) async {
     try {
       await _dio.delete(
-        '/meals/$id',
+        '/users/$id',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      fetchMeals();
+      fetchUsers(token);
     } catch (e) {
-      print(e);
+      print('Error deleting user: $e');
     }
   }
 }
 
-final mealManageProvider =
-    StateNotifierProvider<MealManageNotifier, AsyncValue<List<dynamic>>>(
-      (ref) => MealManageNotifier(),
+final userManageProvider =
+    StateNotifierProvider<UserManageNotifier, AsyncValue<List<dynamic>>>(
+      (ref) => UserManageNotifier(),
     );

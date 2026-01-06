@@ -23,6 +23,7 @@ class UserNotifier extends StateNotifier<User?> {
   UserNotifier() : super(null);
 
   String? errorMessage;
+  Map<String, dynamic>? fieldErrors;
 
   final Dio _dio = Dio(
     BaseOptions(
@@ -37,10 +38,10 @@ class UserNotifier extends StateNotifier<User?> {
   Future<bool> login(String phoneNumber, String password) async {
     try {
       errorMessage = null;
-      final response = await _dio.post('/login', data: {
-        'phone_number': phoneNumber,
-        'password': password,
-      });
+      final response = await _dio.post(
+        '/login',
+        data: {'phone_number': phoneNumber, 'password': password},
+      );
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -50,7 +51,8 @@ class UserNotifier extends StateNotifier<User?> {
         // Add the token to Dio headers for future requests within this notifier
         _dio.options.headers['Authorization'] = 'Bearer $token';
 
-        final bool isAdmin = userData['is_admin'] == 1 || userData['is_admin'] == true;
+        final bool isAdmin =
+            userData['is_admin'] == 1 || userData['is_admin'] == true;
 
         state = User(
           id: userData['id'],
@@ -64,7 +66,17 @@ class UserNotifier extends StateNotifier<User?> {
       errorMessage = response.data['message'] ?? 'Login failed';
       return false;
     } on DioException catch (e) {
-      errorMessage = e.response?.data['message'] ?? 'Connection error';
+      if (e.response?.statusCode == 422) {
+        fieldErrors = e.response?.data['errors'];
+        final errors = e.response?.data['errors'];
+        if (errors != null && errors is Map) {
+          errorMessage = errors.values.first[0].toString();
+        } else {
+          errorMessage = e.response?.data['message'] ?? 'Validation error';
+        }
+      } else {
+        errorMessage = e.response?.data['message'] ?? 'Connection error';
+      }
       return false;
     }
   }
@@ -105,7 +117,59 @@ class UserNotifier extends StateNotifier<User?> {
       }
       return false;
     } on DioException catch (e) {
-      errorMessage = e.response?.data['message'] ?? 'Registration failed';
+      if (e.response?.statusCode == 422) {
+        fieldErrors = e.response?.data['errors'];
+        final errors = e.response?.data['errors'];
+        if (errors != null && errors is Map) {
+          errorMessage = errors.values.first[0].toString();
+        } else {
+          errorMessage = e.response?.data['message'] ?? 'Validation error';
+        }
+      } else {
+        errorMessage = e.response?.data['message'] ?? 'Registration failed';
+      }
+      return false;
+    }
+  }
+
+  Future<bool> updateProfile({
+    String? name,
+    String? phoneNumber,
+    String? password,
+  }) async {
+    try {
+      errorMessage = null;
+      final data = <String, dynamic>{};
+      if (name != null) data['name'] = name;
+      if (phoneNumber != null) data['phone_number'] = phoneNumber;
+      if (password != null && password.isNotEmpty) data['password'] = password;
+
+      final response = await _dio.put('/user/update', data: data);
+
+      if (response.statusCode == 200) {
+        final userData = response.data['user'];
+        state = User(
+          id: userData['id'],
+          username: userData['name'],
+          phoneNumber: userData['phone_number'],
+          role: state!.role,
+          token: state!.token,
+        );
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 422) {
+        fieldErrors = e.response?.data['errors'];
+        final errors = e.response?.data['errors'];
+        if (errors != null && errors is Map) {
+          errorMessage = errors.values.first[0].toString();
+        } else {
+          errorMessage = e.response?.data['message'] ?? 'Validation error';
+        }
+      } else {
+        errorMessage = e.response?.data['message'] ?? 'Update failed';
+      }
       return false;
     }
   }

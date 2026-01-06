@@ -4,7 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class CategoryManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
   CategoryManageNotifier() : super(const AsyncValue.loading());
 
-  final Dio _dio = Dio(BaseOptions(baseUrl: 'http://localhost:8000/api'));
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: 'http://127.0.0.1:8000/api',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    ),
+  );
+
+  String? errorMessage;
+  Map<String, dynamic>? fieldErrors;
 
   Future<void> fetchCategories() async {
     state = const AsyncValue.loading();
@@ -32,8 +43,17 @@ class CategoryManageNotifier extends StateNotifier<AsyncValue<List<dynamic>>> {
       return true;
     } catch (e) {
       if (e is DioException) {
-        print('Dio Error: ${e.response?.data}');
-        print('Status Code: ${e.response?.statusCode}');
+        if (e.response?.statusCode == 422) {
+          fieldErrors = e.response?.data['errors'];
+          final errors = e.response?.data['errors'];
+          if (errors != null && errors is Map) {
+            errorMessage = errors.values.first[0].toString();
+          } else {
+            errorMessage = e.response?.data['message'] ?? 'Validation error';
+          }
+        } else {
+          errorMessage = e.response?.data['message'] ?? 'Error saving category';
+        }
       }
       print('Error saving category: $e');
       return false;
