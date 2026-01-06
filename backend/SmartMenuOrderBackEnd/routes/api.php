@@ -20,6 +20,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Status update route
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
     Route::post('/orders/batch', [OrderController::class, 'batchStore']);
+
+    Route::delete('/orders/{order}/cancel', [OrderController::class, 'cancel']);
 });
 // Public Routes
 Route::post('/register', [RegisteredUserController::class, 'store']);

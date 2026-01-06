@@ -1,92 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:group_project/consent/appbar.dart';
 import 'package:group_project/consent/colors.dart';
 import 'package:group_project/providers/cart_provider.dart';
-import 'package:group_project/providers/user_provider.dart'; // 1. Import User Provider
-import 'package:group_project/screen/login_screen.dart'; // 2. Import Login Screen
+import 'package:group_project/providers/order_provider.dart';
+import 'package:group_project/providers/user_provider.dart';
 
-class CartScreen extends ConsumerWidget {
+class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends ConsumerState<CartScreen> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchHistory();
+  }
+
+  void _fetchHistory() {
+    final user = ref.read(userProvider);
+    if (user?.token != null) {
+      ref.read(orderHistoryProvider.notifier).fetchMyOrders(user!.token);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
+    final history = ref.watch(orderHistoryProvider);
     final total = ref.watch(cartTotalProvider);
 
     return Scaffold(
       backgroundColor: background,
-      appBar: appbar(),
-      body: cart.isEmpty
-          ? const Center(child: Text("Your cart is empty"))
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: cart.length,
-                    itemBuilder: (context, index) {
-                      final item = cart[index];
-                      return ListTile(
-                        leading: Image.network(item.imageUrl, width: 50),
-                        title: Text(item.name),
-                        subtitle: Text("${item.quantity} x \$${item.price}"),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => ref
-                              .read(cartProvider.notifier)
-                              .removeItem(item.id),
-                        ),
-                      );
-                    },
-                  ),
+      appBar: AppBar(
+        title: const Text("Cart & History"),
+        backgroundColor: maincolor,
+        centerTitle: true,
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async => _fetchHistory(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (cart.isNotEmpty) ...[
+                const _Header(title: "Items in Cart"),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: cart.length,
+                  itemBuilder: (context, index) {
+                    final item = cart[index];
+                    return ListTile(
+                      leading: Image.network(item.imageUrl, width: 45, errorBuilder: (c,e,s) => const Icon(Icons.fastfood)),
+                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text("${item.quantity} x \$${item.price}"),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => ref.read(cartProvider.notifier).removeItem(item.id),
+                      ),
+                    );
+                  },
                 ),
-                _buildCartSummary(context, ref, total),
+                _buildCheckoutSection(total),
               ],
-            ),
+              const _Header(title: "Your Order History"),
+              if (history.isEmpty)
+                const Center(child: Padding(padding: EdgeInsets.all(40), child: Text("No previous orders.")))
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: history.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final order = history[index];
+                    return ListTile(
+                      title: Text(order.mealName),
+                      subtitle: Text("Status: ${order.status.toUpperCase()}", 
+                        style: TextStyle(color: _getStatusColor(order.status), fontWeight: FontWeight.bold)),
+                      trailing: order.status == 'pending'
+                          ? OutlinedButton(
+                              onPressed: () => _showCancelDialog(order.id),
+                              child: const Text("Cancel", style: TextStyle(color: Colors.red)),
+                            )
+                          : null,
+                    );
+                  },
+                ),
+              const SizedBox(height: 50),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildCartSummary(BuildContext context, WidgetRef ref, double total) {
+  Widget _buildCheckoutSection(double total) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '\$${total.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: maincolor,
-                ),
-              ),
+              const Text("Total:"),
+              Text("\$${total.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, color: maincolor, fontSize: 18)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => _showCheckoutDialog(context, ref, total),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: maincolor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'Proceed to Checkout',
-                style: TextStyle(color: Colors.white),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: maincolor),
+              onPressed: () => _showConfirmOrderDialog(total),
+              child: const Text("Confirm Order", style: TextStyle(color: Colors.white)),
             ),
           ),
         ],
@@ -94,58 +127,65 @@ class CartScreen extends ConsumerWidget {
     );
   }
 
-  void _showCheckoutDialog(BuildContext context, WidgetRef ref, double total) {
-    final user = ref.read(userProvider);
-
-    // 1. Force Login Check
-    if (user == null || user.role == UserRole.guest) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login required to place order')),
-      );
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-      return;
-    }
-
+  void _showConfirmOrderDialog(double total) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Order'),
-        content: Text('Total Amount: \$${total.toStringAsFixed(2)}'),
+        title: const Text("Place Order?"),
+        content: Text("Total amount will be \$${total.toStringAsFixed(2)}."),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
-              // 2. Call the ACTUAL API method in the provider
-              final success = await ref
-                  .read(cartProvider.notifier)
-                  .placeOrder(ref);
-
-              if (context.mounted) {
-                Navigator.pop(context); // Close dialog
+              final success = await ref.read(cartProvider.notifier).placeOrder(ref);
+              if (mounted) {
+                Navigator.pop(context);
                 if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Order placed successfully!')),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to connect to server.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  _fetchHistory();
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order placed!")));
                 }
               }
             },
-            child: const Text('Place Order'),
+            child: const Text("Confirm"),
           ),
         ],
       ),
     );
   }
+
+  void _showCancelDialog(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Cancel Order?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("No")),
+          TextButton(
+            onPressed: () async {
+              final user = ref.read(userProvider);
+              await ref.read(orderHistoryProvider.notifier).cancelOrder(user?.token, id);
+              if (mounted) Navigator.pop(context);
+            },
+            child: const Text("Yes", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    if (status == 'pending') return Colors.orange;
+    if (status == 'cancelled') return Colors.red;
+    return Colors.green;
+  }
+}
+
+class _Header extends StatelessWidget {
+  final String title;
+  const _Header({required this.title});
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  );
 }
